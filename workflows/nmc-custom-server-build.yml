@@ -1,0 +1,111 @@
+###
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Author: Bernd rederlechner <bernd.rederlechner@t-systems.com
+#
+# Assemble a customisation for recent trunk
+# (only master changes, no backports)
+#
+# The assembly ssafeguards that all customisations for master
+# are available and merge properly.
+#
+
+name: MCLOUD custom server build
+
+on:
+  workflow_call:
+    inputs:
+      assembly:
+        description: name of the customisation branch holding the assembly
+        required: true
+        type: string
+      tag:
+        description: tag to use for the release (nmc<nc-version>-<custom-increment>)
+        required: true
+        type: string
+      prerelease:
+        description: mark the package as pre-release
+        required: false
+        type: string        
+  
+jobs:
+  build-custom:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_USER:    ${{ github.actor }}
+      BUILD_EMAIL:   ${{ github.actor }}@users.noreply.github.com
+      BUILD_TOKEN:   ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Fetch custom assembly
+        id:   checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.assembly }}
+          fetch-depth: 1
+          token: ${{ secrets.BUILD_TOKEN }}
+      
+      - name: Setup GIT actor
+        run: |
+          git config user.name $BUILD_USER
+          git config user.email $BUILD_EMAIL
+
+      ###
+      # To keep src as close as possible to Nextcloud checked in
+      # artefacts (and reduce size of patch diffs), the default
+      # release pack is created early
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.tag }}
+          release_name: MagentaCLOUD release ${{ inputs.tag }}
+          draft: false
+          prerelease: ${{ inputs.prerelease || false }}
+
+      # the node.js, npm install procedure is taken over from upstream Nextcloud
+      # command-compile.yml
+      - name: Install NC compatible node.js,npm
+        uses: skjnldsv/read-package-engines-version-actions@v2.2
+        id: package-engines-versions
+        with:
+          fallbackNode: '^16'
+          fallbackNpm: '^7'
+
+      - name: Set up node ${{ steps.package-engines-versions.outputs.nodeVersion }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ steps.package-engines-versions.outputs.nodeVersion }}
+          cache: npm
+
+      - name: Set up npm ${{ steps.package-engines-versions.outputs.npmVersion }}
+        run: npm i -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
+
+      ###
+      # TODO: for safety reasons, remove origin to avoid pushing the manipulated tree
+      # coincidently
+
+      - name: Install dependencies & build
+        run: |
+          npm ci
+          npm run build --if-present
+
+      # either default ignores or listed in .nextcloudignore
+      #- name: Clean files
+      #  run: |
+      #    git clean -Xdf --exclude-from=.nextcloudignore
+  
+      # TODO: check whether we have to generate css from scss for server at all
+      # TODO: check whether we have to generate icons (default.css) from scss for server at all
+      # (could be only required for theme build)
+
+      - name: Pack custom-parts
+        run: tar czvf custom-parts.tar.gz $GITHUB_WORKSPACE
+
+      - name: Upload cleaned custom-parts
+        uses: actions/upload-artifact@v2
+        with:
+          name: custom-parts
+          path: custom-parts-${{ inputs.tag }}.tar.gz
