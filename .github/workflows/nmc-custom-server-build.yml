@@ -102,7 +102,9 @@ jobs:
       # (could be only required for theme build)
 
       - name: Pack custom-parts
-        run: tar czvf custom-parts.tar.gz $GITHUB_WORKSPACE
+        run: |
+          cd $GITHUB_WORKSPACE
+          tar cvzf /tmp/custom-parts-${{ inputs.tag }}.tar.gz 
 
       - name: Upload cleaned custom-parts
         uses: actions/upload-artifact@v2
