@@ -42,7 +42,6 @@ jobs:
         with:
           repository: ${{ github.repository }}
           ref: ${{ inputs.assembly }}
-          path: server
           fetch-depth: 1
           token: ${{ secrets.BUILD_TOKEN }}
       
