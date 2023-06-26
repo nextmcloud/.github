@@ -101,12 +101,12 @@ jobs:
       # TODO: check whether we have to generate icons (default.css) from scss for server at all
       # (could be only required for theme build)
 
-      - name: Pack custom-parts
+      - name: Pack custom-server-parts
         run: |
-          tar --transform='s|^${GITHUB_WORKSPACE}/server/||' -cvzf ${GITHUB_WORKSPACE}/custom-parts-${{ inputs.tag }}.tar.gz ${GITHUB_WORKSPACE}/server/
+          tar --transform='s|^${GITHUB_WORKSPACE}/||' -cvzf ${RUNNER_TEMP}/custom-server-${{ inputs.tag }}.tar.gz ${GITHUB_WORKSPACE}
 
       - name: Upload cleaned custom-parts
         uses: actions/upload-artifact@v2
         with:
-          name: custom-parts
-          path: ${GITHUB_WORKSPACE}/custom-parts-${{ inputs.tag }}.tar.gz
+          name: custom-server-parts
+          path: ${RUNNER_TEMP}/custom-server-${{ inputs.tag }}.tar.gz
