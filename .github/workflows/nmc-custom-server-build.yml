@@ -42,6 +42,7 @@ jobs:
         with:
           repository: ${{ github.repository }}
           ref: ${{ inputs.assembly }}
+          path: server
           fetch-depth: 1
           token: ${{ secrets.BUILD_TOKEN }}
       
@@ -103,11 +104,10 @@ jobs:
 
       - name: Pack custom-parts
         run: |
-          cd "$GITHUB_WORKSPACE"
-          tar cvzf /tmp/custom-parts-${{ inputs.tag }}.tar.gz "."
+          tar --transform='s|^${GITHUB_WORKSPACE}/server/||' -cvzf ${GITHUB_WORKSPACE}/custom-parts-${{ inputs.tag }}.tar.gz ${GITHUB_WORKSPACE}/server/
 
       - name: Upload cleaned custom-parts
         uses: actions/upload-artifact@v2
         with:
           name: custom-parts
-          path: custom-parts-${{ inputs.tag }}.tar.gz
+          path: ${GITHUB_WORKSPACE}/custom-parts-${{ inputs.tag }}.tar.gz
