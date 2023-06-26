@@ -101,12 +101,32 @@ jobs:
       # TODO: check whether we have to generate icons (default.css) from scss for server at all
       # (could be only required for theme build)
 
+      #- name: Upload cleaned custom-parts
+      #  uses: actions/upload-artifact@v2
+      #  with:
+      #    name: custom-server-parts
+      #    path: ${RUNNER_TEMP}/custom-server-parts.tar.gz
+
       - name: Pack custom-server-parts
         run: |
           tar --transform='s|^${GITHUB_WORKSPACE}/||' -cvzf ${RUNNER_TEMP}/custom-server-parts.tar.gz ${GITHUB_WORKSPACE}
 
-      - name: Upload cleaned custom-parts
-        uses: actions/upload-artifact@v2
+      - name: Upload server custom parts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
         with:
-          name: custom-server-parts
-          path: ${RUNNER_TEMP}/custom-server-parts.tar.gz
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${RUNNER_TEMP}/custom-server-parts.tar.gz
+          asset_name: custom-server-parts.tar.gz
+          asset_content_type: application/gzip
+
+      #- name: Post-failure cleanup
+      #  id: release_cleanup
+      #  if: ${{ failure() || cancelled() }}
+      #  uses: actions/delete-release@v1
+      #  env:
+      #    GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
+      #  with:
+      #    tag_name: ${{ inputs.tag }}
+  
