@@ -117,8 +117,8 @@ jobs:
           GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${RUNNER_TEMP}/custom-server-parts.tar.gz
-          asset_name: custom-server-parts.tar.gz
+          asset_path: "${RUNNER_TEMP}/custom-server-parts.tar.gz"
+          asset_name: custom-server-parts
           asset_content_type: application/gzip
 
       #- name: Post-failure cleanup
