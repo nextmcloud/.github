@@ -149,12 +149,36 @@ jobs:
           asset_name: Custom Parts (tar.gz)
           asset_content_type: application/gzip
 
-      #- name: Post-failure cleanup
-      #  id: release_cleanup
-      #  if: ${{ failure() || cancelled() }}
-      #  uses: actions/delete-release@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
-      #  with:
-      #    tag_name: ${{ inputs.tag }}
+      - name: Post-failure cleanup
+        id: release_cleanup
+        if: ${{ failure() || cancelled() }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ env.BUILD_TOKEN }}
+        script: |            
+            const releaseTag = "${{ inputs.tag }}";
+            const octokit = context.github;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // Get the release by tag
+            const { data: release } = await octokit.repos.getReleaseByTag({
+              owner,
+              repo,
+              tag:  releaseTag
+            });
+
+            // Delete the release
+            await octokit.repos.deleteRelease({
+              owner,
+              repo,
+              release_id: release.id
+            });
+
+            // Delete the associated tag
+            await octokit.git.deleteRef({
+              owner,
+              repo,
+              ref: `tags/${releaseTag}`
+            });
   
