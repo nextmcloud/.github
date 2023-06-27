@@ -27,7 +27,33 @@ on:
         description: mark the package as pre-release
         required: false
         type: string        
-  
+
+env:
+  CUSTOM_SERVER_EXCLUDES: |
+    build/
+    config/
+    src/**/*.js
+    /themes/example
+    **/cypress/
+    vendor-bin/
+    .devcontainer/
+    .github/
+    .idea/
+    .tx/
+    3rdparty/
+    build/
+    contribute/
+    .*
+    !.gitignore
+    !.nextcloudignore
+    *
+    !*.php
+    !
+  CUSTOM_TEST_EXCLUDES: |
+    **/tests/
+
+        
+
 jobs:
   build-custom:
     runs-on: ubuntu-latest
@@ -65,6 +91,15 @@ jobs:
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
 
+      - name: Protect from push
+        id: push_protect
+        run: |
+          # set user in case commits are needed
+          git config user.name $BUILD_USER
+          git config user.email $BUILD_EMAIL
+          # but deviate origin to avoid coincidently push
+          git remote set-url origin http://no.such.host
+
       # the node.js, npm install procedure is taken over from upstream Nextcloud
       # command-compile.yml
       - name: Install NC compatible node.js,npm
@@ -83,29 +118,22 @@ jobs:
       - name: Set up npm ${{ steps.package-engines-versions.outputs.npmVersion }}
         run: npm i -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
 
-      ###
-      # TODO: for safety reasons, remove origin to avoid pushing the manipulated tree
-      # coincidently
-
-      - name: Install dependencies & build
+      - name: Install dependencies, build webpacks
         run: |
           npm ci
           npm run build --if-present
-
-      # either default ignores or listed in .nextcloudignore
-      #- name: Clean files
-      #  run: |
-      #    git clean -Xdf --exclude-from=.nextcloudignore
   
       # TODO: check whether we have to generate css from scss for server at all
       # TODO: check whether we have to generate icons (default.css) from scss for server at all
       # (could be only required for theme build)
 
-      #- name: Upload cleaned custom-parts
-      #  uses: actions/upload-artifact@v2
-      #  with:
-      #    name: custom-server-parts
-      #    path: ${RUNNER_TEMP}/custom-server-parts.tar.gz
+      # either default ignores or listed in .nextcloudignore
+      - name: Clean files
+        run: |
+          git clean -Xdf --exclude-from=.gitignore
+          echo ${{ env.CUSTOM_SERVER_EXCLUDES }} > ${RUNNER_TEMP}/.distignore
+          echo ${{ env.CUSTOM_TEST_EXCLUDES }} >> ${RUNNER_TEMP}/.distignore
+          git clean -Xdf --exclude-from=${RUNNER_TEMP}/.distignore
 
       - name: Pack custom-server-parts
         run: |
@@ -118,7 +146,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ runner.temp }}/custom-server-parts.tar.gz
-          asset_name: custom-server-parts
+          asset_name: Custom Parts (tar.gz)
           asset_content_type: application/gzip
 
       #- name: Post-failure cleanup
