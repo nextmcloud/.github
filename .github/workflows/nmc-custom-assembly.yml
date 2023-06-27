@@ -65,7 +65,7 @@ jobs:
           fi
 
       - name: "Find customisation candidates"
-        uses: octokit/graphql-action@v2.2
+        uses: octokit/graphql-action@v2.2.x
         id: find_customisations
         env:
           GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
