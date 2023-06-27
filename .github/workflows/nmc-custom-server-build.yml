@@ -155,7 +155,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{ env.BUILD_TOKEN }}
-        script: |            
+          script: |            
             const releaseTag = "${{ inputs.tag }}";
             const octokit = context.github;
             const owner = context.repo.owner;
