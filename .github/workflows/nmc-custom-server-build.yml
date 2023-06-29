@@ -131,7 +131,7 @@ jobs:
       - name: Clean files
         run: |
           exclude_args=""
-          while IFS= read -r pattern; || [[ -n "$pattern" ]]; do
+          while IFS= read -r pattern || [[ -n "$pattern" ]]; do
             exclude_args+=" --exclude=$pattern"
           done < <(echo '${{ env.CUSTOM_SERVER_EXCLUDES }}\n${{ env.CUSTOM_TEST_EXCLUDES }}')
           set +x
@@ -160,25 +160,21 @@ jobs:
         with:
           github-token: ${{ env.BUILD_TOKEN }}
           script: |
-            const { context, github } = require('@actions/github');
-        
             const releaseTag = "${{ inputs.tag }}";
             const octokit = context.github;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
 
             // Get the release by tag
             const { data: release } = await octokit.repos.getReleaseByTag({
-              owner,
-              repo,
+              context.repo.owner,
+              context.repo.repo,
               tag:  releaseTag
             });
 
             // Delete the release
             try {
               await octokit.repos.deleteRelease({
-                owner,
-                repo,
+                context.repo.owner,
+                context.repo.repo,
                 release_id: release.id
               });
             } catch (error) {
@@ -188,8 +184,8 @@ jobs:
             // Delete the associated tag
             try {
               await octokit.git.deleteRef({
-                owner,
-                repo,
+                context.repo.owner,
+                context.repo.repo,
                 ref: `tags/${releaseTag}`
               });
             } catch (error) {
