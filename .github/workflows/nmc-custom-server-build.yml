@@ -130,10 +130,13 @@ jobs:
       # either default ignores or listed in .nextcloudignore
       - name: Clean files
         run: |
-          git clean -Xdf --exclude-from=.gitignore
-          echo ${{ env.CUSTOM_SERVER_EXCLUDES }} > ${RUNNER_TEMP}/.distignore
-          echo ${{ env.CUSTOM_TEST_EXCLUDES }} >> ${RUNNER_TEMP}/.distignore
-          git clean -Xdf --exclude-from=${RUNNER_TEMP}/.distignore
+          exclude_args=""
+          while IFS= read -r pattern; || [[ -n "$pattern" ]]; do
+            exclude_args+=" --exclude=$pattern"
+          done < <(echo '${{ env.CUSTOM_SERVER_EXCLUDES }}\n${{ env.CUSTOM_TEST_EXCLUDES }}')
+          set +x
+          git clean -Xdf ${exclude_args}
+          set -x
 
       - name: Pack custom-server-parts
         run: |
@@ -149,13 +152,16 @@ jobs:
           asset_name: Custom Parts (tar.gz)
           asset_content_type: application/gzip
 
+
       - name: Post-failure cleanup
         id: release_cleanup
         if: ${{ failure() || cancelled() }}
         uses: actions/github-script@v6
         with:
           github-token: ${{ env.BUILD_TOKEN }}
-          script: |            
+          script: |
+            const { context, github } = require('@actions/github');
+        
             const releaseTag = "${{ inputs.tag }}";
             const octokit = context.github;
             const owner = context.repo.owner;
@@ -169,16 +175,24 @@ jobs:
             });
 
             // Delete the release
-            await octokit.repos.deleteRelease({
-              owner,
-              repo,
-              release_id: release.id
-            });
+            try {
+              await octokit.repos.deleteRelease({
+                owner,
+                repo,
+                release_id: release.id
+              });
+            } catch (error) {
+              // ignore on cleanup
+            }
 
             // Delete the associated tag
-            await octokit.git.deleteRef({
-              owner,
-              repo,
-              ref: `tags/${releaseTag}`
-            });
+            try {
+              await octokit.git.deleteRef({
+                owner,
+                repo,
+                ref: `tags/${releaseTag}`
+              });
+            } catch (error) {
+              // ignore on cleanup
+            }
   
