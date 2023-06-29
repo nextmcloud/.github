@@ -165,16 +165,16 @@ jobs:
 
             // Get the release by tag
             const { data: release } = await octokit.repos.getReleaseByTag({
-              context.repo.owner,
-              context.repo.repo,
-              tag:  releaseTag
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              tag:   releaseTag
             });
 
             // Delete the release
             try {
               await octokit.repos.deleteRelease({
-                context.repo.owner,
-                context.repo.repo,
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
                 release_id: release.id
               });
             } catch (error) {
@@ -184,8 +184,8 @@ jobs:
             // Delete the associated tag
             try {
               await octokit.git.deleteRef({
-                context.repo.owner,
-                context.repo.repo,
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
                 ref: `tags/${releaseTag}`
               });
             } catch (error) {
