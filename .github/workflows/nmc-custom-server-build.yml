@@ -95,11 +95,6 @@ jobs:
           ref: ${{ inputs.assembly }}
           fetch-depth: 0
           token: ${{ secrets.BUILD_TOKEN }}
-      
-      - name: Setup GIT actor
-        run: |
-          git config user.name $BUILD_USER
-          git config user.email $BUILD_EMAIL
 
       ###
       # To keep src as close as possible to Nextcloud checked in
@@ -116,14 +111,14 @@ jobs:
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
 
-      - name: Protect from push
+      - name: Protect against push
         id: push_protect
         run: |
           # set user in case commits are needed
           git config user.name $BUILD_USER
           git config user.email $BUILD_EMAIL
           # but dead-end origin to avoid unintended push
-          git remote set-url origin http://no.such.host
+          # git remote set-url origin http://no.such.host
 
       # the node.js, npm install procedure is taken over from upstream Nextcloud
       # command-compile.yml
@@ -165,10 +160,9 @@ jobs:
 
       - name: Diff cleaned version
         run: |
-          # remporarily add dirty changes
+          # tremporarily add dirty changes
           git add -A
           git commit -m "Temp add"
-          git checkout ${{ inputs.stable }}
           git diff --patch --diff-filter=d ${{ inputs.stable }}..HEAD -- > ${RUNNER_TEMP}/custom-server.patch
           gzip -9 ${RUNNER_TEMP}/custom-server.patch
           # remove dirty changes again
