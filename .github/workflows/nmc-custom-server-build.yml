@@ -15,6 +15,10 @@ name: MCLOUD custom server build
 on:
   workflow_call:
     inputs:
+      stable:
+        description: The NExtcloud stable upstream branch of enterprise release
+        required: true
+        type: string
       assembly:
         description: name of the customisation branch holding the assembly
         required: true
@@ -30,29 +34,31 @@ on:
 
 env:
   CUSTOM_SERVER_EXCLUDES: |
-    build/
-    config/
-    src/**/*.js
-    /themes/example
-    **/cypress/
-    vendor-bin/
-    .devcontainer/
-    .github/
-    .idea/
-    .tx/
-    3rdparty/
-    build/
-    contribute/
-    .*
-    !.gitignore
-    !.nextcloudignore
-    *
-    !*.php
-    !
+    /build/
+    /config/
+    /src/**/*.js
+    /themes/example/
+    /vendor-bin/
+    /.devcontainer/
+    /.github/
+    /.idea/
+    /.tx/
+    /3rdparty/
+    /build/
+    /contribute/
+    /.*
+    !/.gitignore
+    !/.nextcloudignore
+    /composer.*
+    package.json
+    package-lock.json
+    webpack.*
+    
   CUSTOM_TEST_EXCLUDES: |
     **/tests/
-
-        
+    **/cypress/
+    /cypress*.ts
+    /jest.config.ts
 
 jobs:
   build-custom:
@@ -129,29 +135,32 @@ jobs:
 
       # either default ignores or listed in .nextcloudignore
       - name: Clean files
+        env:
+          CUSTOM_EXCLUDES: |
+            ${{ env.CUSTOM_SERVER_EXCLUDES }}
+            ${{ env.CUSTOM_TEST_EXCLUDES }}
         run: |
-          exclude_args=""
-          while IFS= read -r pattern || [[ -n "$pattern" ]]; do
-            exclude_args+=" --exclude=$pattern"
-          done < <(echo '${{ env.CUSTOM_SERVER_EXCLUDES }}\n${{ env.CUSTOM_TEST_EXCLUDES }}')
-          set +x
-          git clean -Xdf ${exclude_args}
-          set -x
+          echo -e $CUSTOM_EXCLUDES > ${RUNNER_TEMP}/.distignore
+          cat ${RUNNER_TEMP}/.distignore
+          git ls-files --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -t rm -rf
 
-      - name: Pack custom-server-parts
+      - name: Diff cleaned version
         run: |
-          tar --transform='s|^${GITHUB_WORKSPACE}/||' -czf ${RUNNER_TEMP}/custom-server-parts.tar.gz ${GITHUB_WORKSPACE}
+          git stash
+          git checkout ${{ inputs.stable }}
+          git diff --diff-filter=d ${{ inputs.stable }} stash > ${RUNNER_TEMP}/custom-server.diff
+          git stash pop
+          gzip -9 ${RUNNER_TEMP}/custom-server.diff
 
       - name: Upload server custom parts
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
+          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}            
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ runner.temp }}/custom-server-parts.tar.gz
-          asset_name: Custom Parts (tar.gz)
+          asset_path: ${{ runner.temp }}/custom-server.diff.gz
+          asset_name: Custom Server diff (tar.gz)
           asset_content_type: application/gzip
-
 
       - name: Post-failure cleanup
         id: release_cleanup
