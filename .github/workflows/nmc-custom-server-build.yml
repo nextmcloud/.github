@@ -148,7 +148,7 @@ jobs:
         run: |
           git stash
           git checkout ${{ inputs.stable }}
-          git diff --patch --diff-filter=d ${{ inputs.stable }} stash > ${RUNNER_TEMP}/custom-server.diff
+          git diff --patch --diff-filter=d ${{ inputs.stable }} stash -- > ${RUNNER_TEMP}/custom-server.diff
           git stash pop
           gzip -9 ${RUNNER_TEMP}/custom-server.diff
 
@@ -170,10 +170,9 @@ jobs:
           github-token: ${{ env.BUILD_TOKEN }}
           script: |
             const releaseTag = "${{ inputs.tag }}";
-            const octokit = context.github;
 
             // Get the release by tag
-            const { data: release } = await octokit.rest.repos.getReleaseByTag({
+            const { data: release } = await github.rest.repos.getReleaseByTag({
               owner: context.repo.owner,
               repo:  context.repo.repo,
               tag:   releaseTag
@@ -181,7 +180,7 @@ jobs:
 
             // Delete the release
             try {
-              await octokit.rest.repos.deleteRelease({
+              await github.rest.repos.deleteRelease({
                 owner: context.repo.owner,
                 repo:  context.repo.repo,
                 release_id: release.id
@@ -192,7 +191,7 @@ jobs:
 
             // Delete the associated tag
             try {
-              await octokit.rest.git.deleteRef({
+              await github.rest.git.deleteRef({
                 owner: context.repo.owner,
                 repo:  context.repo.repo,
                 ref: `tags/${releaseTag}`
