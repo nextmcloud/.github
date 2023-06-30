@@ -165,15 +165,14 @@ jobs:
 
       - name: Diff cleaned version
         run: |
-          git stash
-          # do the manipulations on a temporary branch
-          git checkout -b temp_branch
-          git stash apply 
+          # remporarily add dirty changes
+          git add -A
+          git commit -m "Temp add"
           git checkout ${{ inputs.stable }}
-          git diff --patch --diff-filter=d ${{ inputs.stable }} temp_branch -- > ${RUNNER_TEMP}/custom-server.patch
+          git diff --patch --diff-filter=d ${{ inputs.stable }}..HEAD -- > ${RUNNER_TEMP}/custom-server.patch
           gzip -9 ${RUNNER_TEMP}/custom-server.patch
-          git branch -D temp_branch
-          git stash drop
+          # remove dirty changes again
+          git reset HEAD~ 
 
       - name: Upload server custom parts
         uses: actions/upload-release-asset@v1
