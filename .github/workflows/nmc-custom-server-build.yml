@@ -74,7 +74,7 @@ jobs:
         with:
           repository: ${{ github.repository }}
           ref: ${{ inputs.assembly }}
-          fetch-depth: 1
+          fetch-depth: 0
           token: ${{ secrets.BUILD_TOKEN }}
       
       - name: Setup GIT actor
@@ -103,7 +103,7 @@ jobs:
           # set user in case commits are needed
           git config user.name $BUILD_USER
           git config user.email $BUILD_EMAIL
-          # but deviate origin to avoid coincidently push
+          # but dead-end origin to avoid unintended push
           git remote set-url origin http://no.such.host
 
       # the node.js, npm install procedure is taken over from upstream Nextcloud
@@ -148,7 +148,7 @@ jobs:
         run: |
           git stash
           git checkout ${{ inputs.stable }}
-          git diff --diff-filter=d ${{ inputs.stable }} stash > ${RUNNER_TEMP}/custom-server.diff
+          git diff --patch --diff-filter=d ${{ inputs.stable }} stash > ${RUNNER_TEMP}/custom-server.diff
           git stash pop
           gzip -9 ${RUNNER_TEMP}/custom-server.diff
 
@@ -158,8 +158,8 @@ jobs:
           GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}            
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ runner.temp }}/custom-server.diff.gz
-          asset_name: Custom Server diff (tar.gz)
+          asset_path: ${{ runner.temp }}/custom-server.patch.gz
+          asset_name: Custom Server patch (tar.gz)
           asset_content_type: application/gzip
 
       - name: Post-failure cleanup
@@ -173,7 +173,7 @@ jobs:
             const octokit = context.github;
 
             // Get the release by tag
-            const { data: release } = await octokit.repos.getReleaseByTag({
+            const { data: release } = await octokit.rest.repos.getReleaseByTag({
               owner: context.repo.owner,
               repo:  context.repo.repo,
               tag:   releaseTag
@@ -181,7 +181,7 @@ jobs:
 
             // Delete the release
             try {
-              await octokit.repos.deleteRelease({
+              await octokit.rest.repos.deleteRelease({
                 owner: context.repo.owner,
                 repo:  context.repo.repo,
                 release_id: release.id
@@ -192,7 +192,7 @@ jobs:
 
             // Delete the associated tag
             try {
-              await octokit.git.deleteRef({
+              await octokit.rest.git.deleteRef({
                 owner: context.repo.owner,
                 repo:  context.repo.repo,
                 ref: `tags/${releaseTag}`
