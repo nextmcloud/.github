@@ -3,11 +3,11 @@
 #
 # Author: Bernd rederlechner <bernd.rederlechner@t-systems.com
 #
-# Assemble a customisation for recent trunk
-# (only master changes, no backports)
+# Assemble a customisation for recent trunk or a stable branch
+# If trunk, no backports are considered. For stable, only the
+# backports targetted for this baseline are considered.
 #
-# The assembly ssafeguards that all customisations for master
-# are available and merge properly.
+# Assembly fails if a PR does not merge automatically.
 #
 
 name: MCLOUD custom server build
@@ -156,15 +156,14 @@ jobs:
         run: |
           echo -e $CUSTOM_EXCLUDES > ${RUNNER_TEMP}/.distignore
           cat ${RUNNER_TEMP}/.distignore
-          # git ls-files --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -t rm -rf
-          git rm -r -f --pathspec-from-file=${RUNNER_TEMP}/.distignore --cached
+          git ls-files --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -t git rm -f
 
       - name: Diff cleaned version
         run: |
           # temporarily add dirty changes
           git add -A
           git commit -m "Temp add"
-          git checkout ${{ inputs.stable }}
+          git fetch --unshallow origin ${{ inputs.stable }}
           git diff --patch --diff-filter=d --merge-base ${{ inputs.stable }} \
               ${{ inputs.assembly }} -- > ${RUNNER_TEMP}/custom-server.patch
           gzip -9 ${RUNNER_TEMP}/custom-server.patch
