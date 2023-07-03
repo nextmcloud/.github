@@ -88,13 +88,27 @@ jobs:
             }
 
       - name: Fetch custom assembly
-        id:   checkout
+        id:   checkout_custom
         uses: actions/checkout@v3
         with:
           repository: ${{ github.repository }}
           ref: ${{ inputs.assembly }}
           fetch-depth: 0
           token: ${{ secrets.BUILD_TOKEN }}
+
+      - name: Fetch custom assembly
+        id:   checkout_stable
+        run: |
+          # set user in case commits are needed
+          git config user.name $BUILD_USER
+          git config user.email $BUILD_EMAIL
+          # checkout stable as diff preparation
+          git fetch ${{ inputs.stable }}
+          git checkout ${{ inputs.stable }}
+          # but dead-end origin to avoid unintended push
+          git checkout ${{ inputs.assembly }}
+          git remote set-url origin http://no.such.host
+  
 
       ###
       # To keep src as close as possible to Nextcloud checked in
@@ -110,15 +124,6 @@ jobs:
           release_name: MagentaCLOUD release ${{ inputs.tag }}
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
-
-      - name: Protect against push
-        id: push_protect
-        run: |
-          # set user in case commits are needed
-          git config user.name $BUILD_USER
-          git config user.email $BUILD_EMAIL
-          # but dead-end origin to avoid unintended push
-          # git remote set-url origin http://no.such.host
 
       # the node.js, npm install procedure is taken over from upstream Nextcloud
       # command-compile.yml
