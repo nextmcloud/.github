@@ -103,7 +103,7 @@ jobs:
           git config user.name $BUILD_USER
           git config user.email $BUILD_EMAIL
           # checkout stable as diff preparation
-          git fetch ${{ inputs.stable }}
+          git fetch origin ${{ inputs.stable }}
           git checkout ${{ inputs.stable }}
           # but dead-end origin to avoid unintended push
           git checkout ${{ inputs.assembly }}
