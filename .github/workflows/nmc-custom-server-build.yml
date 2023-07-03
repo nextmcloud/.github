@@ -164,7 +164,7 @@ jobs:
           # temporarily add dirty changes
           git add -A
           git commit -m "Temp add"
-          git fetch --unshallow origin ${{ inputs.stable }}
+          git fetch origin ${{ inputs.stable }}
           git diff --patch --diff-filter=d --merge-base ${{ inputs.stable }} \
               ${{ inputs.assembly }} -- > ${RUNNER_TEMP}/custom-server.patch
           gzip -9 ${RUNNER_TEMP}/custom-server.patch
