@@ -156,8 +156,7 @@ jobs:
         run: |
           echo -e "$CUSTOM_EXCLUDES" > ${RUNNER_TEMP}/.distignore
           set -x
-          cat ${RUNNER_TEMP}/.distignore
-          git ls-files --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -t git rm -f
+          git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f
           set +x
 
       - name: Diff cleaned version
