@@ -166,7 +166,7 @@ jobs:
 
       - name: Diff cleaned version
         run: |
-          # temporarily add dirty changes
+          # locally add build changes, no push
           git add -A
           git commit -m "Temp add"
           git diff --patch --diff-filter=d --merge-base ${{ inputs.stable }} \
@@ -182,7 +182,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ runner.temp }}/custom-server.patch.gz
-          asset_name: Custom Server Patch (gz)
+          asset_name: custom-server.patch.gz
           asset_content_type: application/gzip
 
       - name: Post-failure cleanup
