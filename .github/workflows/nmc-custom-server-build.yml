@@ -93,7 +93,7 @@ jobs:
         with:
           repository: ${{ github.repository }}
           ref: ${{ inputs.assembly }}
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.BUILD_TOKEN }}
 
       - name: Fetch custom assembly
