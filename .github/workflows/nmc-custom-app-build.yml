@@ -161,7 +161,7 @@ jobs:
 
       - name: Pack app version
         run: |
-        tar --transform='s|^${GITHUB_WORKSPACE}/||' -czf ${RUNNER_TEMP}/${{ inputs.appname }}.tar.gz ${GITHUB_WORKSPACE}
+          tar --transform='s|^${GITHUB_WORKSPACE}/||' -czf ${RUNNER_TEMP}/${{ inputs.appname }}.tar.gz ${GITHUB_WORKSPACE}
 
       - name: Upload app package
         uses: actions/upload-release-asset@v1
