@@ -10,7 +10,7 @@
 # Assembly fails if a PR does not merge automatically.
 #
 
-name: MCLOUD custom server build
+name: MCLOUD custom app build
 
 on:
   workflow_call:
@@ -72,11 +72,13 @@ jobs:
       - name: Fetch custom assembly
         id:   checkout_custom
         uses: actions/checkout@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           repository: ${{ github.repository }}
           ref: ${{ env.ASSEMBLY }}
           fetch-depth: 0
-          token: ${{ secrets.BUILD_TOKEN }}
+          token: ${{ env.BUILD_TOKEN }}
 
       - name: Prepare GIT modifications
         id:   prepare_git        
