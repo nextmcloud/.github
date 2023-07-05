@@ -68,24 +68,6 @@ jobs:
       BUILD_EMAIL:   ${{ github.actor }}@users.noreply.github.com
       BUILD_TOKEN:   ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
-      - name: Check ambigouity
-        id: release_not_exist
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ env.BUILD_TOKEN }}
-          script: |
-            // Test whether release is readable
-            try {
-              const releaseTag = "${{ inputs.tag }}";
-              const { data: release } = await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo:  context.repo.repo,
-                tag:   releaseTag
-              });
-              core.setFailed(`Release tags/${releaseTag} already exists!`);
-            } catch (error) {
-              // expect release to be not found
-            }
 
       - name: Fetch custom assembly
         id:   checkout_custom
