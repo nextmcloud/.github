@@ -1,0 +1,73 @@
+###
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Author: Bernd rederlechner <bernd.rederlechner@t-systems.com
+#
+# Assemble a customisation for recent trunk or a stable branch
+# If trunk, no backports are considered. For stable, only the
+# backports targetted for this baseline are considered.
+#
+# Assembly fails if a PR does not merge automatically.
+#
+
+name: MCLOUD check release build preconditions
+
+on:
+  workflow_call:
+    inputs:
+      versionbranch:
+        description: Name of the source branch the info.xml for the build is located
+        required: true
+        type: string
+      increment:
+        description: the customisation increment suffix for version
+        required: true
+        type: number
+    outputs:
+      appname: ${{ steps.appname.result }}
+      appversion: ${{ steps.appversion.result }}
+      tag: nmc${{ steps.appversion.result }}-${{ inputs.increment }}
+
+jobs:
+  build-custom:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TOKEN: ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Load appinfo
+        id: appinfo
+        run: |
+          curl --silent "https://$BUILD_TOKEN@raw.githubusercontent.com/$GITHUB_REPOSITORY/"${{ inputs.versionbranch }}"/appinfo/info.xml" > ${{ runner.TEMP }}/info.xml
+
+      - name: Get appname from appinfo
+        id: appname
+        uses: skjnldsv/xpath-action@master
+        with:
+          filename: ${{ runner.TEMP }}/info.xml
+          expression: "/info/id"
+
+      - name: Get appversion from appinfo
+        id: appversion
+        uses: skjnldsv/xpath-action@master
+        with:
+          filename: ${{ runner.TEMP }}/info.xml
+          expression: "/info/version"
+      
+      - name: Check ambigouity
+        id: release_not_exist
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ env.BUILD_TOKEN }}
+          script: |
+            // Test whether release is readable
+            try {
+              const releaseTag = "nmc${{ steps.appversion.result }}-${{ inputs.increment }}";
+              const { data: release } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                tag:   releaseTag
+              });
+              core.setFailed(`Release tags/${releaseTag} already exists!`);
+            } catch (error) {
+              // expect release to be not found
+            }

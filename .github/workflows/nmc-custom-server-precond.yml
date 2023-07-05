@@ -1,0 +1,57 @@
+###
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Author: Bernd rederlechner <bernd.rederlechner@t-systems.com
+#
+# Assemble a customisation for recent trunk or a stable branch
+# If trunk, no backports are considered. For stable, only the
+# backports targetted for this baseline are considered.
+#
+# Assembly fails if a PR does not merge automatically.
+#
+
+name: MCLOUD custom server build
+
+on:
+  workflow_call:
+    inputs:
+      stable:
+        description: name of the stable baseline branch to build on
+        required: true
+        type: string
+      stable:
+        description: increment to the nextcloud release name
+        required: true
+        type: number
+    output:
+      tag: ${{ steps.tag_name.result }}
+
+jobs:
+  build-custom:
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TOKEN: ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Compute release tag name
+        id: tag_name
+        run: |
+          echo "result="${INPUTS_STABLE##*/}-$INPUTS_INCREMENT" >> $GITHUB_OUTPUT
+
+      - name: Check ambigouity
+        id: release_not_exist
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ env.BUILD_TOKEN }}
+          script: |
+            // Test whether release is readable
+            try {
+              const releaseTag = "${{ steps.tag_name.result }}";
+              const { data: release } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo:  context.repo.repo,
+                tag:   releaseTag
+              });
+              core.setFailed(`Release tags/${releaseTag} already exists!`);
+            } catch (error) {
+              // expect release to be not found
+            }
