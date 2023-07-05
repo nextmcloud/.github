@@ -191,7 +191,7 @@ jobs:
           repository: ${{ env.CUSTOM_REPO }}
           ref: ${{ env.TARGET_STABLE }}
           fetch-depth: ${{ env.FETCH_DEPTH }}
-          token: ${{ secrets.BUILD_TOKEN }}
+          token: ${{ env.BUILD_TOKEN }}
 
       # this works also with TARGET_STABLE as a branch OR tag
       - name: Prepare trunk build branch
