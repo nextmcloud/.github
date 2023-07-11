@@ -35,7 +35,7 @@ jobs:
       - name: Compute release tag name
         id: tag_name
         run: |
-          echo "result="${INPUTS_STABLE##*/}-$INPUTS_INCREMENT" >> $GITHUB_OUTPUT
+          echo "result="nmc${INPUTS_STABLE##*/}-$INPUTS_INCREMENT" >> $GITHUB_OUTPUT
 
       - name: Check ambigouity
         id: release_not_exist

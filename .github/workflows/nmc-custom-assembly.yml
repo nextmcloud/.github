@@ -19,7 +19,7 @@
 #
 # Test call: act --container-architecture linux/amd64 --secret-file ../secrets.env --env-file ../nmc-master-build.env -j build-custom-stable
 
-name: MCLOUD custom PR assembler
+name: MCLOUD assembly (custom PRs)
 
 on:
   workflow_call:

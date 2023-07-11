@@ -10,7 +10,7 @@
 # Assembly fails if a PR does not merge automatically.
 #
 
-name: MCLOUD custom server build
+name: MCLOUD build server (custom release)
 
 on:
   workflow_call:
