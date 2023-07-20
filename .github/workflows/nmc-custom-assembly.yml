@@ -119,40 +119,33 @@ jobs:
                     }, [...array]);
             }
 
-            function isBackportFor(port, master) {
-                if (( port.baseRefName === target_stable ) &&
-                    ( master.baseRefName === target_trunk ) && 
-                    ( port.headRefName.startsWith( 'backport' )) &&
-                    ( port.headRefName.endsWith( master.headRefName ))) {
-                    return true;  
-                } else {
-                    return false;
-                }
+            function isBackport(pr) {
+                return ( pr.baseRefName === target_stable );
             }
 
-            var buildparts = [];
-            var newerparts =[];
-
-            for (cIdx=0; cIdx < customisations.length; cIdx++) {
-                if (cIdx+1 < customisations.length) {
-                    // detect master - backport pairs
-                    if (isBackportFor( customisations[cIdx], customisations[cIdx+1] )) {
-                        buildparts.push(customisations[cIdx]);
-                        newerparts.push(customisations[cIdx+1]);
-                        cIdx++;
-                    } else if (isBackportFor( customisations[cIdx+1], customisations[cIdx] )) {
-                        buildparts.push(customisations[cIdx+1]);
-                        newerparts.push(customisations[cIdx]);
-                        cIdx++;
-                    } else {
-                        // handle as single entry
-                        buildparts.push(customisations[cIdx]);
-                    }
-                } else {
-                    // handle as last entry
-                    buildparts.push(customisations[cIdx]);
-                }
+            function isTrunk(pr) {
+                return ( pr.baseRefName === target_trunk );
             }
+
+            var backports = customisations.filter(isBackport);
+            var trunkparts = customisations.filter(isTrunk);
+
+            function backportForTrunk(trunk) {
+                backport = backports.find(function (port) {
+                    return (( port.baseRefName === target_stable ) &&
+                            ( trunk.baseRefName === target_trunk ) && 
+                            ( port.headRefName.startsWith( 'backport' )) &&
+                            ( port.headRefName.contains( trunk.headRefName )));
+                });
+                return (backport != undefined) ? backport : trunk;
+            }
+
+            var nonUniqueBuildParts = trunkparts.map(backportForTrunk).concat(backports);
+            var buildparts = [...new Set(nonUniqueBuildParts)];
+            var newerparts = trunkparts.filter(function(part) {
+                return !buildparts.includes(part);
+            });
+
             core.setOutput('buildparts', JSON.stringify(shuffleArray(buildparts)) );
             core.setOutput('newerparts', JSON.stringify(shuffleArray(newerparts)) );
             return "";            
