@@ -135,7 +135,7 @@ jobs:
                     return (( port.baseRefName === target_stable ) &&
                             ( trunk.baseRefName === target_trunk ) && 
                             ( port.headRefName.startsWith( 'backport' )) &&
-                            ( port.headRefName.contains( trunk.headRefName )));
+                            ( port.headRefName.includes( trunk.headRefName )));
                 });
                 return (backport != undefined) ? backport : trunk;
             }
