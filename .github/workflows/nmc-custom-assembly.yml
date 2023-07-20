@@ -137,7 +137,7 @@ jobs:
                             ( port.headRefName.startsWith( 'backport' )) &&
                             ( port.headRefName.includes( trunk.headRefName )));
                 });
-                return (backport != undefined) ? backport : trunk;
+                return (backport !== undefined) ? backport : trunk;
             }
 
             var nonUniqueBuildParts = trunkparts.map(backportForTrunk).concat(backports);
@@ -179,7 +179,7 @@ jobs:
 
       - name: Checkout build repo
         id: checkout
-        if: ${{ success() || failure() && steps.checkmergeable.outcome == 'failure' }}
+        if: ${{ success() || failure() && steps.checkmergeable.outcome == 'failure' }}
         uses: actions/checkout@v3
         with:
           repository: ${{ env.CUSTOM_REPO }}
@@ -190,7 +190,7 @@ jobs:
       # this works also with TARGET_STABLE as a branch OR tag
       - name: Prepare trunk build branch
         id: createcustombranch
-        if: ${{ success() || failure() && steps.checkout.outcome == 'success' }}
+        if: ${{ success() || failure() && steps.checkout.outcome == 'success' }}
         run: |
           if git ls-remote --exit-code --heads origin "$CUSTOM_BRANCH" >/dev/null 2>&1; then
               # make sure that customisation output branch is fresh
@@ -330,6 +330,6 @@ jobs:
 ### PUSH result (optional)
       - name: Push '${{ env.CUSTOM_BRANCH }}'
         id: pushcustomisation
-        if: ${{ success() || failure() && steps.createcustombranch.outcome == 'success' }}
+        if: ${{ success() || failure() && steps.createcustombranch.outcome == 'success' }}
         run: |
           git push origin $CUSTOM_BRANCH
