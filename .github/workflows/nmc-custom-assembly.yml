@@ -122,7 +122,8 @@ jobs:
             function isBackportFor(port, master) {
                 if (( port.baseRefName === target_stable ) &&
                     ( master.baseRefName === target_trunk ) && 
-                    ( port.headRefName.startsWith( master.headRefName ))) {
+                    ( port.headRefName.startsWith( 'backport' ))) {
+                    ( port.headRefName.endsWith( master.headRefName ))) {
                     return true;  
                 } else {
                     return false;
