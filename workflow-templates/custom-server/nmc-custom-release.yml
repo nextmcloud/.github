@@ -29,15 +29,15 @@ jobs:
     uses: nextmcloud/.github/.github/workflows/nmc-custom-assembly.yml@master
     with:
       trunk: 'master'
-      stable: ${{ vars.CUSTOM_BRANCH || 'nmcstable/25.0.6' }}
+      stable: ${{ vars.CUSTOM_BRANCH || 'stable25' }}
       result: ${{ format('customisation-{0}-{1}', vars.CUSTOM_BRANCH || 'nmcstable/25.0.6', inputs.increment ) }}
     secrets: inherit
   build-custom:
     uses: nextmcloud/.github/.github/workflows/nmc-custom-server-build.yml@master
     needs: assemble-custom
     with:
-      stable: ${{ vars.CUSTOM_BRANCH || 'nmcstable/25.0.6' }}
-      assembly: ${{ format('customisation-{0}-{1}', vars.CUSTOM_BRANCH || 'nmcstable/25.0.6', inputs.increment ) }}
-      tag: ${{ format('{0}-{1}', vars.CUSTOM_BRANCH || 'nmcstable/25.0.6' , inputs.increment) }}
+      stable: ${{ vars.CUSTOM_BRANCH || 'stable25' }}
+      assembly: ${{ format('customisation-{0}-{1}', vars.CUSTOM_BRANCH || 'stable25', inputs.increment ) }}
+      tag: ${{ format('{0}-{1}', vars.CUSTOM_BRANCH || 'stable25' , inputs.increment) }}
       prerelease: false
     secrets: inherit
