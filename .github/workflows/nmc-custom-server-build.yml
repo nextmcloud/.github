@@ -151,7 +151,7 @@ jobs:
           # locally add build changes, no push
           git add -A
           git commit -m "Temp add"
-          git diff --patch --diff-filter=d --merge-base ${{ inputs.stable }} \
+          git diff --patch --diff-filter=d --merge-base stable25 \
               ${{ inputs.assembly }} -- > ${RUNNER_TEMP}/custom-server.patch
           gzip -9 ${RUNNER_TEMP}/custom-server.patch
           # clean changes, just to avoid mess - but not absolutely necessary
