@@ -24,15 +24,25 @@ on:
         required: true
         type: number
     outputs:
-      appname: ${{ jobs.appcheck.steps.appname.result }}
-      appversion: ${{ jobs.appcheck.steps.appversion.result }}
-      tag: nmc${{ jobs.appcheck.steps.appversion.result }}-${{ inputs.increment }}
+      appname: 
+        description: The appname from info.xml
+        value: ${{ jobs.appcheck.outputs.appname }}
+      appversion: 
+        description: The appversion from info.xml        
+        value: ${{ jobs.appcheck.outputs.appversion }}     
+      tag: 
+        description: a tag name according to our naming conventions      
+        value: ${{ jobs.appcheck.outputs.tag }}
 
 jobs:
   appcheck:
     runs-on: ubuntu-latest
     env:
       BUILD_TOKEN: ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
+      outputs:
+        appname: ${{ steps.appname.result }}
+        appversion: ${{ steps.appversion.result }}
+        tag: nmc${{ steps.appversion.result }}-${{ inputs.increment }}  
     steps:
       - name: Load appinfo
         id: appinfo
