@@ -56,14 +56,14 @@ jobs:
         uses: skjnldsv/xpath-action@master
         with:
           filename: ${{ runner.TEMP }}/info.xml
-          expression: "/info/id"
+          expression: "/info/id/text()"
 
       - name: Get appversion from appinfo
         id: appversion
         uses: skjnldsv/xpath-action@master
         with:
           filename: ${{ runner.TEMP }}/info.xml
-          expression: "/info/version"
+          expression: "/info/version/text()"
       
       - name: Check ambigouity
         id: release_not_exist
