@@ -24,12 +24,12 @@ on:
         required: true
         type: number
     outputs:
-      appname: ${{ steps.appname.result }}
-      appversion: ${{ steps.appversion.result }}
-      tag: nmc${{ steps.appversion.result }}-${{ inputs.increment }}
+      appname: ${{ jobs.appcheck.steps.appname.result }}
+      appversion: ${{ jobs.appcheck.steps.appversion.result }}
+      tag: nmc${{ jobs.appcheck.steps.appversion.result }}-${{ inputs.increment }}
 
 jobs:
-  build-custom:
+  appcheck:
     runs-on: ubuntu-latest
     env:
       BUILD_TOKEN: ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
@@ -70,4 +70,5 @@ jobs:
               core.setFailed(`Release tags/${releaseTag} already exists!`);
             } catch (error) {
               // expect release to be not found
+              // let's proceed build
             }
