@@ -40,10 +40,12 @@ jobs:
     env:
       BUILD_TOKEN: ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
       outputs:
-        appname: ${{ steps.appname.result }}
-        appversion: ${{ steps.appversion.result }}
-        tag: nmc${{ steps.appversion.result }}-${{ inputs.increment }}  
+        appname: ${{ steps.appname.outputs.result }}
+        appversion: ${{ steps.appversion.outputs.result }}
+        tag: nmc${{ steps.appversion.outputs.result }}-${{ inputs.increment }}  
     steps:
+
+        # read directly from Nextcloud to get the app infromation before lengthy fetch
       - name: Load appinfo
         id: appinfo
         run: |
