@@ -22,7 +22,7 @@ on:
       increment:
         description: the customisation increment suffix for version
         required: true
-        type: number
+        type: string
     outputs:
       appname: 
         description: The appname from info.xml
