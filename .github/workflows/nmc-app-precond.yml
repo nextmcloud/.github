@@ -53,14 +53,14 @@ jobs:
 
       - name: Get appname from appinfo
         id: appname
-        uses: skjnldsv/xpath-action@master
+        uses: QwerMike/xpath-action@v1
         with:
           filename: ${{ runner.TEMP }}/info.xml
           expression: "/info/id/text()"
 
       - name: Get appversion from appinfo
         id: appversion
-        uses: skjnldsv/xpath-action@master
+        uses: QwerMike/xpath-action@v1
         with:
           filename: ${{ runner.TEMP }}/info.xml
           expression: "/info/version/text()"
