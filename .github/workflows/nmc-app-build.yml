@@ -120,6 +120,7 @@ jobs:
       # the node.js, npm install procedure is taken over from upstream Nextcloud
       # command-compile.yml
       - name: Detect NC compatible node.js,npm
+        if: ${{ hashFiles('package.json') != '' }}
         uses: skjnldsv/read-package-engines-version-actions@v2.2
         id: package-engines-versions
         with:
@@ -127,15 +128,18 @@ jobs:
           fallbackNpm: '^7'
           
       - name: Set up node ${{ steps.package-engines-versions.outputs.nodeVersion }}
+        if: ${{ hashFiles('package.json') != '' }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.package-engines-versions.outputs.nodeVersion }}
           cache: npm
 
       - name: Set up npm ${{ steps.package-engines-versions.outputs.npmVersion }}
+        if: ${{ hashFiles('package.json') != '' }}
         run: npm i -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
 
       - name: Build composer dependencies, sass, webpacks
+        if: ${{ hashFiles('package.json') != '' }}
         run: |
           npm ci
           npm run build --if-present
