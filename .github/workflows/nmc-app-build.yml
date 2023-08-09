@@ -151,7 +151,9 @@ jobs:
             ${{ env.CUSTOM_SERVER_EXCLUDES }}
             ${{ env.CUSTOM_TEST_EXCLUDES }}
         run: |
-          git ls-files -z --ignored --exclude-per-directory=./.nextcloudignore --cached | xargs -0 git rm -f
+          if [ -f "./.nextcloudignore" ]; then
+              git ls-files -z --ignored --exclude-per-directory=./.nextcloudignore --cached | xargs -0 git rm -f
+          fi
           echo -e "$CUSTOM_EXCLUDES" > ${RUNNER_TEMP}/.distignore
           set -x
           git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f
