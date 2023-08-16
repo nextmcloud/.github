@@ -1,7 +1,7 @@
 ###
 # SPDX-License-Identifier: AGPL-3.0
 #
-# Author: Bernd rederlechner <bernd.rederlechner@t-systems.com
+# Author: Bernd Rederlechner <bernd.rederlechner@t-systems.com
 #
 # Assemble a customisation for recent trunk or a stable branch
 # If trunk, no backports are considered. For stable, only the
@@ -30,6 +30,9 @@ on:
       appversion: 
         description: The appversion from info.xml        
         value: ${{ jobs.appcheck.outputs.appversion }}     
+      appshort: 
+        description: The short description from info.xml        
+        value: ${{ jobs.appshort.outputs.appshort }}     
       tag: 
         description: a tag name according to our naming conventions      
         value: ${{ jobs.appcheck.outputs.tag }}
@@ -42,6 +45,7 @@ jobs:
     outputs:
       appname: ${{ steps.appname.outputs.result }}
       appversion: ${{ steps.appversion.outputs.result }}
+      appinfo: ${{ steps.appinfo.outputs.result }}
       tag: nmc${{ steps.appversion.outputs.result }}-${{ inputs.increment }}  
     steps:
 
@@ -65,6 +69,13 @@ jobs:
           filename: ${{ runner.TEMP }}/info.xml
           expression: "/info/version/text()"
       
+      - name: Get appversion from appinfo
+        id: appshort
+        uses: QwerMike/xpath-action@v1
+        with:
+          filename: ${{ runner.TEMP }}/info.xml
+          expression: "/info/summary/text()"
+
       - name: Check ambigouity
         id: release_not_exist
         uses: actions/github-script@v6
@@ -73,7 +84,7 @@ jobs:
           script: |
             // Test whether release is readable
             try {
-              const releaseTag = "nmc${{ steps.appversion.result }}-${{ inputs.increment }}";
+              const releaseTag = "nmc${{ steps.appversion.outputs.result }}-${{ inputs.increment }}";
               const { data: release } = await github.rest.repos.getReleaseByTag({
                 owner: context.repo.owner,
                 repo:  context.repo.repo,

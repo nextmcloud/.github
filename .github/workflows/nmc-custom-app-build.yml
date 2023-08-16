@@ -1,7 +1,7 @@
 ###
 # SPDX-License-Identifier: AGPL-3.0
 #
-# Author: Bernd rederlechner <bernd.rederlechner@t-systems.com
+# Author: Bernd Rederlechner <bernd.rederlechner@t-systems.com
 #
 # Assemble a customisation for recent trunk or a stable branch
 # If trunk, no backports are considered. For stable, only the
@@ -99,7 +99,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ inputs.tag }}
-          release_name: ${{ inputs.tag }} MagentaCLOUD custom app '${{ inputs.appname }}'
+          release_name: ${{ inputs.tag }}
+          body: |
+              Update for MagentaCloud customized fork app '${{ inputs.appname }}'
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
 

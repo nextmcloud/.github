@@ -103,7 +103,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ inputs.tag }}
-          release_name: ${{ inputs.tag }} MagentaCLOUD server customisation 
+          release_name: ${{ inputs.tag }}
+          body: |
+              Update for MagentaCloud server fork
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
 
