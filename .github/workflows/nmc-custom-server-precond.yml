@@ -19,24 +19,27 @@ on:
         description: name of the stable baseline branch to build on
         required: true
         type: string
-      stable:
+      increment:
         description: increment to the nextcloud release name
         required: true
         type: number
-    output:
-      tag: ${{ steps.tag_name.result }}
+    outputs:
+      tag:
+        description: Compute server release tagname 
+        value: ${{ jobs.servercheck.outputs.tagname }}
 
 jobs:
-  build-custom:
+  servercheck:
     runs-on: ubuntu-latest
     env:
-      BUILD_TOKEN: ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
+      BUILD_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      tagname: ${{ steps.tagname.outputs.result }}
     steps:
       - name: Compute release tag name
-        id: tag_name
+        id: tagname
         run: |
           echo "result="nmc${INPUTS_STABLE##*/}-$INPUTS_INCREMENT" >> $GITHUB_OUTPUT
-
       - name: Check ambigouity
         id: release_not_exist
         uses: actions/github-script@v6
@@ -45,7 +48,7 @@ jobs:
           script: |
             // Test whether release is readable
             try {
-              const releaseTag = "${{ steps.tag_name.result }}";
+              const releaseTag = "${{ steps.tagname.outputs.result }}";
               const { data: release } = await github.rest.repos.getReleaseByTag({
                 owner: context.repo.owner,
                 repo:  context.repo.repo,

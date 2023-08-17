@@ -32,7 +32,7 @@ on:
         value: ${{ jobs.appcheck.outputs.appversion }}     
       appshort: 
         description: The short description from info.xml        
-        value: ${{ jobs.appshort.outputs.appshort }}     
+        value: ${{ jobs.appcheck.outputs.appshort }}     
       tag: 
         description: a tag name according to our naming conventions      
         value: ${{ jobs.appcheck.outputs.tag }}
@@ -45,10 +45,9 @@ jobs:
     outputs:
       appname: ${{ steps.appname.outputs.result }}
       appversion: ${{ steps.appversion.outputs.result }}
-      appinfo: ${{ steps.appinfo.outputs.result }}
+      appshort: ${{ steps.appshort.outputs.result }}
       tag: nmc${{ steps.appversion.outputs.result }}-${{ inputs.increment }}  
     steps:
-
         # read directly from Nextcloud to get the app infromation before lengthy fetch
       - name: Load appinfo
         id: appinfo

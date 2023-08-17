@@ -49,7 +49,6 @@ jobs:
       BUILD_USER:    ${{ github.actor }}
       BUILD_EMAIL:   ${{ github.actor }}@users.noreply.github.com
       BUILD_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
-      # BUILD_TOKEN: ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
       CUSTOM_BRANCH: ${{ inputs.result }} 
     steps:
       - name: Assembly preparation
