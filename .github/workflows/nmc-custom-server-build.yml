@@ -37,6 +37,8 @@ env:
     /build/
     /config/
     /src/**/*.js
+    /apps/**/src/**/*.js
+    /core/src/**/*.js
     /themes/example/
     /vendor-bin/
     /.devcontainer/
@@ -66,7 +68,7 @@ jobs:
     env:
       BUILD_USER:    ${{ github.actor }}
       BUILD_EMAIL:   ${{ github.actor }}@users.noreply.github.com
-      BUILD_TOKEN:   ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
+      BUILD_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
     steps:
 
       - name: Fetch custom assembly
@@ -78,7 +80,7 @@ jobs:
           fetch-depth: 0
           token: ${{ env.BUILD_TOKEN }}
 
-      - name: Fetch custom assembly
+      - name: Get stable information
         id:   checkout_stable
         run: |
           # set user in case commits are needed
