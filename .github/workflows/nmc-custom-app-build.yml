@@ -34,6 +34,7 @@ on:
 
 env:
   CUSTOM_SERVER_EXCLUDES: |
+    /.git/
     /build/
     /node_modules/
     /contribute/
@@ -157,9 +158,16 @@ jobs:
             ${{ env.CUSTOM_SERVER_EXCLUDES }}
             ${{ env.CUSTOM_TEST_EXCLUDES }}
         run: |
-          git ls-files -z --ignored --exclude-per-directory=./.nextcloudignore --cached | xargs -0 git rm -f --ignore-unmatch
           echo -e "$CUSTOM_EXCLUDES" > ${RUNNER_TEMP}/.distignore
+          if [ -f "./.nextcloudignore" ]; then
+            cat ./.nextcloudignore >> ${RUNNER_TEMP}/.distignore
+          fi
+          set -x
           git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f --ignore-unmatch
+          set +x
+
+          # for apps, this last step will also remove the .git directory, so no git operations after this points anymore
+
 
       - name: Pack app version
         run: |
