@@ -1,0 +1,30 @@
+{
+    "name": "<your appname here>",
+    "version": "0.1.0",
+    "description": "MagentaCLOUD <xyz app> for Nextcloud",
+    "author": "T-Systems International",
+    "type": "module",
+    "devDependencies": {
+        "@nextcloud/babel-config": "^1.0.0",
+        "@nextcloud/browserslist-config": "^2.3.0",
+        "@nextcloud/eslint-config": "^8.2.1",
+        "@nextcloud/stylelint-config": "^2.3.1",
+        "@nextcloud/webpack-vue-config": "^5.5.1",
+        "sass": "^1.54.9",
+        "vue-template-compiler": "^2.7.14"
+    },
+    "//": "seems to be needed to make it work atm",
+    "overrides": {
+        "stylelint": "^15.10.3"
+    },
+    "scripts": {
+        "lint": "eslint js src",
+        "lint:fix": "eslint js src --fix",
+        "stylelint": "stylelint css",
+        "stylelint:fix": "stylelint css --fix",
+        "sass": "sass --style compressed --load-path css css/",
+        "sass:watch": "sass --watch --load-path css css/",
+        "sass:icons": "node js/icons.js", 
+        "postinstall": "cp node_modules/@telekom/design-tokens/dist/telekom/css/telekom-design-tokens.all.css dist/telekom-design-tokens.all.css"
+    }
+}
