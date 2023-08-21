@@ -215,7 +215,7 @@ jobs:
 
       - name: Merge customisations
         id: custommerge
-        if: ${{ success() || failure() && steps.createcustombranch.outcome == 'success' }}
+        if: ${{ success() || failure() && steps.createcustombranch.outcome == 'success' }}
         run: |
           function tmp_rebase {
               branch=$1
