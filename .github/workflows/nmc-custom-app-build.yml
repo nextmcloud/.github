@@ -102,7 +102,7 @@ jobs:
           tag_name: ${{ inputs.tag }}
           release_name: ${{ inputs.tag }}
           body: |
-              Update for MagentaCloud customized fork app '${{ inputs.appname }}'
+              Update for *Magenta*Cloud *customized fork app ${{ inputs.appname }}*
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
 
@@ -166,7 +166,7 @@ jobs:
           git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f --ignore-unmatch
           set +x
 
-          # for apps, this last step will also remove the .git directory, so no git operations after this points anymore
+      # for apps, this last step will also remove the .git directory, so no git operations after this points anymore
 
 
       - name: Pack app version

@@ -97,7 +97,7 @@ jobs:
           tag_name: ${{ inputs.tag }}
           release_name: ${{ inputs.tag }}
           body: |
-            Update for MagentaCLOUD regular app '${{ inputs.appname }}'
+            Update for *Magenta*Cloud *regular app ${{ inputs.appname }}*
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
 
@@ -157,13 +157,15 @@ jobs:
             ${{ env.CUSTOM_SERVER_EXCLUDES }}
             ${{ env.CUSTOM_TEST_EXCLUDES }}
         run: |
-          if [ -f "./.nextcloudignore" ]; then
-              git ls-files -z --ignored --exclude-per-directory=./.nextcloudignore --cached | xargs -0 git rm -f
-          fi
           echo -e "$CUSTOM_EXCLUDES" > ${RUNNER_TEMP}/.distignore
+          if [ -f "./.nextcloudignore" ]; then
+            cat ./.nextcloudignore >> ${RUNNER_TEMP}/.distignore
+          fi
           set -x
-          git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f
+          git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f --ignore-unmatch
           set +x
+
+    # for apps, this last step will also remove the .git directory, so no git operations after this points anymore
 
       - name: Pack app version
         run: |
