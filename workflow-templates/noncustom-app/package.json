@@ -19,10 +19,12 @@
         "typescript": "^5.1.6"
     },
     "scripts": {
-        "build": "webpack --node-env production --progress",
-        "postbuild": "npm run sass && npm run sass:icons",    
-        "lint": "eslint js src",
-        "lint:fix": "eslint js src --fix",
+        "build": "npm run build:webpack",
+        "postbuild": "npm run sass && npm run sass:icons",
+        "lint": "eslint js",
+        "lint:fix": "eslint js --fix",
+        "build:webpack": "webpack --node-env development --progress",
+        "build:watch": "webpack --node-env development --progress --watch",
         "stylelint": "stylelint css",
         "stylelint:fix": "stylelint css --fix",
         "sass": "sass --style compressed --load-path css css/",
