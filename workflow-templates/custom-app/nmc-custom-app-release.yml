@@ -22,29 +22,37 @@ on:
         description: 'Release increment'
         required: true
         type: number
+      branch:
+        type: choice
+        description: Branch to build a package from
+        options: 
+          - main
+          - stable25
+          - stable26
+          - stable27
+        default: main
 
 jobs:
   check-custom:
-    uses: nextmcloud/.github/.github/workflows/nmc-custom-app-precond.yml@master
+    uses: nextmcloud/.github/.github/workflows/nmc-app-precond.yml@master
     with:
-      versionbranch: ${{ vars.CUSTOM_BRANCH || 'nmcstable/25.0.6' }}
+      versionbranch: ${{ inputs.branch }}
       increment: ${{ inputs.increment }}
     secrets: inherit
   assemble-custom:
     uses: nextmcloud/.github/.github/workflows/nmc-custom-assembly.yml@master
+    needs: check-custom
     with:
       trunk: 'main'
-      stable: ${{ vars.CUSTOM_BRANCH || 'nmcstable/25.0.6' }}
-      result: ${{ format('customisation-{0}-{1}', vars.CUSTOM_BRANCH || jobs.check-custom.appversion , inputs.increment ) }}
+      stable: ${{ inputs.branch }}
+      result: ${{ format('customisation-{0}-{1}', inputs.branch, inputs.increment ) }}
     secrets: inherit
   build-custom:
     uses: nextmcloud/.github/.github/workflows/nmc-custom-app-build.yml@master
-    needs: assemble-custom
+    needs: [ check-custom, assemble-custom ]
     with:
-      appname: ${{ jobs.check-custom.appname }}
-      stable: ${{ vars.CUSTOM_BRANCH || 'nmcstable/25.0.6' }}
-      assembly: ${{ format('customisation-{0}-{1}', vars.CUSTOM_BRANCH || jobs.check-custom.appversion , inputs.increment ) }}
-      tag: ${{ jobs.check-custom.tag }}
-      prerelease: true
+      appname: ${{ needs.check-custom.outputs.appname }}
+      assembly: ${{ format('customisation-{0}-{1}', inputs.branch , inputs.increment ) }}
+      tag: ${{ needs.check-custom.outputs.tag }}
+      prerelease: ${{ inputs.branch == 'main' && true || false }}
     secrets: inherit
-
