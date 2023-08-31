@@ -208,4 +208,11 @@ jobs:
             } catch (error) {
               // ignore on cleanup
             }
+      - name: Create artifact
+        run: echo "${{ github.event.inputs.tag }}" > build-version-tag.txt
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-version-tag-artifact
+          path: build-version-tag.txt
   
