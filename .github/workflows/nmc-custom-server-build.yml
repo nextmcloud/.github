@@ -208,8 +208,6 @@ jobs:
             } catch (error) {
               // ignore on cleanup
             }
-      - name: Create artifact
-        run: echo "${{ format('{0}-{1}', vars.CUSTOM_BRANCH || 'stable25' , inputs.increment) }}" > build-version-tag.txt
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
