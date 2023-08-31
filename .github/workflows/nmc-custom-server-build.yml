@@ -110,6 +110,12 @@ jobs:
               Update for MagentaCloud server fork
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
+        
+      - name: Set tag output
+        id: set-tag
+        run: |
+          echo: "::set-output name=tag::${{ format('{0}-{1}', vars.CUSTOM_BRANCH || 'stable25', inputs.increment )}}"
+          echo: "$tag"
 
       # the node.js, npm install procedure is taken over from upstream Nextcloud
       # command-compile.yml
@@ -208,6 +214,9 @@ jobs:
             } catch (error) {
               // ignore on cleanup
             }
+      - name: Create artifact
+        run: echo "${{ steps.set-tag.outputs.tag }}" > build-version-tag.txt
+
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
