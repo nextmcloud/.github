@@ -208,10 +208,10 @@ jobs:
             } catch (error) {
               // ignore on cleanup
             }
-
+      - name: Create artifact
+        run: echo "${{ inputs.tag }}" > build-custom-tag.txt
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          name: build-version-tag-artifact
-          path: build-version-tag.txt
-  
+          name: build-custom-tag-artifact
+          path: build-custom-tag.txt
