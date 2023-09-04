@@ -224,13 +224,4 @@ jobs:
         with:
           name: build-custom-tag-artifact
           path: build-custom-tag.txt
-
-      - name: Download artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: build-version-tag-artifact
-          path: ./downloaded-artifact
-
-      - name: Set artifact as env var
-        run: echo "ARTIFACT_CONTENT=$(cat ./downloaded-artifact/build-version-tag.txt)" >> $PKR_VAR_NC_TAG
         
