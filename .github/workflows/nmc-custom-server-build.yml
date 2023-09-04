@@ -208,6 +208,14 @@ jobs:
             } catch (error) {
               // ignore on cleanup
             }
+
+      - name: Save tag
+        run: echo "TAG=${{ inputs.tag }}" >> $GITHUB_ENV
+
+      - name: Verify tag
+        run: |
+          echo "$TAG"
+
       - name: Create artifact
         run: echo "${{ inputs.tag }}" > build-custom-tag.txt
 
