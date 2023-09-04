@@ -212,16 +212,14 @@ jobs:
       - name: Save tag
         run: echo "TAG=${{ inputs.tag }}" >> $GITHUB_ENV
 
-      - name: Verify tag
+      - name: Trigger Nmc deployment image building
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
         run: |
-          echo "$TAG"
-
-      - name: Create artifact
-        run: echo "${{ inputs.tag }}" > build-custom-tag.txt
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: build-custom-tag-artifact
-          path: build-custom-tag.txt
+          curl -X POST \
+              --fail \
+              -F token=$GITLAB_TOKEN \
+              -F ref=master \
+              -F variables[PKR_VAR_NC_TAG]="$TAG" \
+              https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline
         
