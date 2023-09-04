@@ -1,7 +1,7 @@
 ###
 # SPDX-License-Identifier: AGPL-3.0
 #
-# Author: Bernd rederlechner <bernd.rederlechner@t-systems.com
+# Author: Bernd Rederlechner <bernd.rederlechner@t-systems.com
 #
 # Build non-forked, self-developed app with the same mechanism
 # as MagentaCLOUD custoized apps
@@ -95,7 +95,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ inputs.tag }}
-          release_name: ${{ inputs.tag }} MagentaCLOUD app '${{ inputs.appname }}'
+          release_name: ${{ inputs.tag }}
+          body: |
+            Update for *Magenta*Cloud *regular app ${{ inputs.appname }}*
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
 
@@ -120,6 +122,7 @@ jobs:
       # the node.js, npm install procedure is taken over from upstream Nextcloud
       # command-compile.yml
       - name: Detect NC compatible node.js,npm
+        if: ${{ hashFiles('package.json') != '' }}
         uses: skjnldsv/read-package-engines-version-actions@v2.2
         id: package-engines-versions
         with:
@@ -127,15 +130,18 @@ jobs:
           fallbackNpm: '^7'
           
       - name: Set up node ${{ steps.package-engines-versions.outputs.nodeVersion }}
+        if: ${{ hashFiles('package.json') != '' }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.package-engines-versions.outputs.nodeVersion }}
           cache: npm
 
       - name: Set up npm ${{ steps.package-engines-versions.outputs.npmVersion }}
+        if: ${{ hashFiles('package.json') != '' }}
         run: npm i -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
 
       - name: Build composer dependencies, sass, webpacks
+        if: ${{ hashFiles('package.json') != '' }}
         run: |
           npm ci
           npm run build --if-present
@@ -151,15 +157,19 @@ jobs:
             ${{ env.CUSTOM_SERVER_EXCLUDES }}
             ${{ env.CUSTOM_TEST_EXCLUDES }}
         run: |
-          git ls-files -z --ignored --exclude-per-directory=./.nextcloudignore --cached | xargs -0 git rm -f
           echo -e "$CUSTOM_EXCLUDES" > ${RUNNER_TEMP}/.distignore
+          if [ -f "./.nextcloudignore" ]; then
+            cat ./.nextcloudignore >> ${RUNNER_TEMP}/.distignore
+          fi
           set -x
-          git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f
+          git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f --ignore-unmatch
           set +x
+
+    # for apps, this last step will also remove the .git directory, so no git operations after this points anymore
 
       - name: Pack app version
         run: |
-          tar --transform='s|^${GITHUB_WORKSPACE}/||' -czf ${RUNNER_TEMP}/${{ inputs.appname }}.tar.gz ${GITHUB_WORKSPACE}
+          tar -C ${GITHUB_WORKSPACE}/.. -czf ${RUNNER_TEMP}/${{ inputs.appname }}.tar.gz ${{ inputs.appname }}
 
       - name: Upload app package
         uses: actions/upload-release-asset@v1
