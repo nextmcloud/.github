@@ -39,7 +39,7 @@ jobs:
 
       - name: Combine version artifacts
         run: |
-          echo "${NC_TAG}" > versions-combined.txt
+          echo "customisation-${NC_TAG}" > versions-combined.txt
           echo "${NMCPROVISIONING_TAG}" >> versions-combined.txt
           echo "${USER_OIDC_TAG}" >> versions-combined.txt
           echo "${NMCTHEME_TAG}" >> versions-combined.txt
