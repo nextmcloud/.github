@@ -1,9 +1,8 @@
 name: Store version artifacts
 
 on:
-  workflow_run:
-    workflows: ["MCLOUD app release"]
-    
+  workflow_call:
+
   workflow_dispatch:
 
 jobs:
