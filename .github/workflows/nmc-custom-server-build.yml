@@ -208,20 +208,17 @@ jobs:
             } catch (error) {
               // ignore on cleanup
             }
-      - name: Create artifact
-        run: echo "${{ inputs.tag }}" > build-custom-tag.txt
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: build-custom-tag-artifact
-          path: build-custom-tag.txt
+      - name: Generate NC_TAG
+        run: echo "NC_TAG=customization-${{ inputs.tag }}" >> $GITHUB_ENV
 
-      - name: Download artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: build-version-tag-artifact
-          path: ./downloaded-artifact
-
-      - name: Set artifact as env var
-        run: echo "ARTIFACT_CONTENT=$(cat ./downloaded-artifact/build-version-tag.txt)" >> $PKR_VAR_NC_TAG
+      - name: Trigger Nmc deployment image building
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
+        run: |
+          curl -X POST \
+              --fail \
+              -F token=$GITLAB_TOKEN \
+              -F ref=master \
+              -F variables[PKR_VAR_NC_TAG]="$NC_TAG" \
+              https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline

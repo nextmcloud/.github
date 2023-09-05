@@ -218,4 +218,16 @@ jobs:
             } catch (error) {
               // ignore on cleanup
             }
-  
+      - name: Generate APP_TAG
+        run: echo "APP_TAG=customization-${{ inputs.tag }}" >> $GITHUB_ENV
+
+      - name: Trigger Nmc deployment image building
+        env:
+          GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
+        run: |
+          curl -X POST \
+              --fail \
+              -F token=$GITLAB_TOKEN \
+              -F ref=master \
+              -F variables[PKR_VAR_${{ inputs.appname }}_TAG]="$APP_TAG" \
+              https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline
