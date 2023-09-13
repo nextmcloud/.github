@@ -3,11 +3,9 @@ name: Trigger GitLab Image Pipeline
 on:
   schedule:
     - cron: "0 15 * * *"
-
-  workflow_run:
-    workflows: ["MCLOUD custom server release"]
-    types:
-      - completed
+  
+  workflow_call:
+  
   workflow_dispatch: # manual
 
 jobs:
@@ -15,12 +13,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Trigger Nmc deployment image building
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Download versions artifact
+      run: |
+        # Download the artifact from the second workflow
+        curl -O -L -J -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/nextmcloud/.github/actions/artifacts/ARTIFACT_ID/zip"
+        
+        # Extract the archive
+        unzip versions-combined.zip
+      # Replace username/repo and ARTIFACT_ID with your repository and artifact details
+
+    - name: Trigger Nmc deployment image building with versions
       env:
         GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
       run: |
+        # Read the versions from the file
+        VERSIONS=$(cat versions-combined.txt)
+        
+        # Trigger the GitLab pipeline with versions
         curl -X POST \
-            --fail \
-            -F token=$GITLAB_TOKEN \
-            -F ref=master \
-            https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline
+          --fail \
+          -F token=$GITLAB_TOKEN \
+          -F ref=master \
+          -F variables[VERSIONS]="$VERSIONS" \
+          https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline
