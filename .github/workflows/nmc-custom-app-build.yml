@@ -142,15 +142,6 @@ jobs:
       - name: Set up npm ${{ steps.package-engines-versions.outputs.npmVersion }}
         run: npm i -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
 
-      - name: Build composer dependencies, sass, webpacks
-        run: |
-          npm ci
-          npm run build --if-present
-  
-      # TODO: check whether we have to generate css from scss for server at all
-      # TODO: check whether we have to generate icons (default.css) from scss for server at all
-      # (could be only required for theme build)
-
       # either default ignores or listed in .nextcloudignore
       - name: Clean files
         env:
