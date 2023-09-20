@@ -140,6 +140,9 @@ jobs:
         if: ${{ hashFiles('package.json') != '' }}
         run: npm i -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
 
+      - name: Create webpack config
+        run: npm webpack init
+
       - name: Build Vue components
         run: npm run build
 
