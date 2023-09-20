@@ -140,6 +140,9 @@ jobs:
         if: ${{ hashFiles('package.json') != '' }}
         run: npm i -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
 
+      - name: Npm clean install
+        run: npm ci
+
       - name: Build components
         run: npm run build
 
