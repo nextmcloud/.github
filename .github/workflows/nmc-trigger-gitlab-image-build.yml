@@ -15,20 +15,24 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+
     - name: Get Latest Artifact ID
       id: get-artifact-id
       run: |
         # Use the GitHub API to get the latest artifact ID
         ARTIFACT_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/nextmcloud/.github/actions/workflows/WORKFLOW_ID/runs/latest/artifacts" | \
+          "https://api.github.com/repos/nextmcloud/.github/actions/workflows/store-version-artifacts/runs/latest/artifacts" | \
           jq -r '.artifacts[0].id')
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
+
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Download versions artifact
       run: |
         # Download the artifact from the second workflow
         curl -O -L -J -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/nextmcloud/.github/actions/artifacts/ARTIFACT_ID/zip"
+          "https://api.github.com/repos/nextmcloud/.github/actions/artifacts/${{ steps.get-artifact-id.outputs.artifact_id }}/zip"
         
         # Extract the archive
         unzip versions-combined.zip
