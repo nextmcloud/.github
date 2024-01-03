@@ -119,7 +119,7 @@ jobs:
         uses: skjnldsv/read-package-engines-version-actions@v2.2
         id: package-engines-versions
         with:
-          fallbackNode: '^16'
+          fallbackNode: '^14'
           fallbackNpm: '^7'
 
       - name: Set up node ${{ steps.package-engines-versions.outputs.nodeVersion }}
