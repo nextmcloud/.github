@@ -49,17 +49,17 @@ jobs:
       BUILD_USER:    ${{ github.actor }}
       BUILD_EMAIL:   ${{ github.actor }}@users.noreply.github.com
       BUILD_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
-      CUSTOM_BRANCH: ${{ inputs.result }} 
+      CUSTOM_BRANCH_26: ${{ inputs.result }} 
     steps:
       - name: Assembly preparation
         run: |
           if [ "$TARGET_TRUNK" = "$TARGET_STABLE" ]; then
-              echo ::notice::"TRUNK build '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH }}'"
-              echo "** TRUNK build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH }}' **" >> $GITHUB_STEP_SUMMARY
+              echo ::notice::"TRUNK build '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}'"
+              echo "** TRUNK build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}' **" >> $GITHUB_STEP_SUMMARY
               echo ::output name=buildtype::trunk
           else
-              echo ::notice::"BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH }}'"
-              echo "** BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH }}' **" >> $GITHUB_STEP_SUMMARY
+              echo ::notice::"BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}'"
+              echo "** BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}' **" >> $GITHUB_STEP_SUMMARY
               echo ::output name=buildtype::stable
           fi
 
@@ -191,17 +191,17 @@ jobs:
         id: createcustombranch
         if: ${{ success() || failure() && steps.checkout.outcome == 'success' }}
         run: |
-          if git ls-remote --exit-code --heads origin "$CUSTOM_BRANCH" >/dev/null 2>&1; then
+          if git ls-remote --exit-code --heads origin "$CUSTOM_BRANCH_26" >/dev/null 2>&1; then
               # make sure that customisation output branch is fresh
-              echo "Branch $CUSTOM_BRANCH exists upstream. Deleting..."
-              git push origin --delete "$CUSTOM_BRANCH"
+              echo "Branch $CUSTOM_BRANCH_26 exists upstream. Deleting..."
+              git push origin --delete "$CUSTOM_BRANCH_26"
           fi
-          git checkout -b $CUSTOM_BRANCH $TARGET_STABLE
+          git checkout -b $CUSTOM_BRANCH_26 $TARGET_STABLE
 
       #- name: Detect obsolete backport candidates
       #  id: checkobsolete
       #  run: |
-      #    git checkout $CUSTOM_BRANCH
+      #    git checkout $CUSTOM_BRANCH_26
       #    result=0
       #    newerparts=$(echo '${{ steps.pickbackports.outputs.newerparts }}' | jq -r '.[]')
       #    for newerpart in "$newerparts"
@@ -231,19 +231,19 @@ jobs:
               git branch --copy $branch $copybranch
 
               echo ::debug::"REBASE-$base #$prnr $copybranch"
-              git checkout $CUSTOM_BRANCH
-              git rebase --merge --onto $CUSTOM_BRANCH --fork-point $base $copybranch
+              git checkout $CUSTOM_BRANCH_26
+              git rebase --merge --onto $CUSTOM_BRANCH_26 --fork-point $base $copybranch
               result=$?
               if [ $result = 0 ]; then
                   # if rebase is successful, the final merge must be able to fast-forward
                   echo ::debug::"FF-MERGE-$base #$prnr $copybranch"
-                  # HEAD has moved so checkout again to savely start merge from CUSTOM_BRANCH HEAD
-                  git checkout $CUSTOM_BRANCH
+                  # HEAD has moved so checkout again to savely start merge from CUSTOM_BRANCH_26 HEAD
+                  git checkout $CUSTOM_BRANCH_26
                   git merge --ff-only --commit  -m "Rebase-FF-Merge #$prnr $title" $copybranch
                   result=$?
                   echo ":white_check_mark: REBASE_MERGE #${prnr} ${head}(type: ${base}): ${title}!" >> $GITHUB_STEP_SUMMARY
               else
-                  git checkout $CUSTOM_BRANCH
+                  git checkout $CUSTOM_BRANCH_26
                   git diff --diff-filter=U
                   echo ::error::"FAILED REBASE_MERGE #${prnr} ${head}(type: ${base}): ${title}!"
                   echo ":no_entry_sign: REBASE_MERGE #${prnr} ${head}(type: ${base}): ${title}!" >> $GITHUB_STEP_SUMMARY
@@ -266,7 +266,7 @@ jobs:
               # git fetch origin $branch
               git checkout $base
               git checkout $branch
-              git checkout $CUSTOM_BRANCH
+              git checkout $CUSTOM_BRANCH_26
 
               echo ::debug::"MERGE-$base #$prnr $branch"
               # do test merge first
@@ -302,7 +302,7 @@ jobs:
               base=$(echo "$mergepull" | jq -r '.baseRefName')        
               title=$(echo "$mergepull" | jq -r '.title')
               prnr=$(echo "$mergepull" | jq -r '.number')
-              echo ::group::"$head(type:$base) >>> '${{ env.CUSTOM_BRANCH }}'"
+              echo ::group::"$head(type:$base) >>> '${{ env.CUSTOM_BRANCH_26 }}'"
               # same behavior used for buildtypes tags and stable
               # stable implements backport picking
               if [ "$base" = "$TARGET_STABLE" ]; then
@@ -327,8 +327,8 @@ jobs:
           fi
 
 ### PUSH result (optional)
-      - name: Push '${{ env.CUSTOM_BRANCH }}'
+      - name: Push '${{ env.CUSTOM_BRANCH_26 }}'
         id: pushcustomisation
         if: ${{ success() || failure() && steps.createcustombranch.outcome == 'success' }}
         run: |
-          git push origin $CUSTOM_BRANCH
+          git push origin $CUSTOM_BRANCH_26
