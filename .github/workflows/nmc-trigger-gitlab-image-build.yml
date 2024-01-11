@@ -24,8 +24,9 @@ jobs:
         WORKFLOW_ID="$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           "https://api.github.com/repos/nextmcloud/.github/actions/workflows" | \
           jq -r --arg WORKFLOW_NAME "$WORKFLOW_NAME" '.workflows[] | select(.name == $WORKFLOW_NAME) | .id')
-
         echo "::set-output name=workflow_id::$WORKFLOW_ID"
+        echo "$WORKFLOW_ID"
+
         # Use the GitHub API to get the latest artifact ID
         ARTIFACT_ID="$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           "https://api.github.com/repos/nextmcloud/.github/actions/runs/${{ steps.get-artifact-id.outputs.workflow_id }}/artifacts" | \
