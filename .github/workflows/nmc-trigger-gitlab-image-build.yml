@@ -21,7 +21,24 @@ jobs:
       run: |
         # Use the GitHub API to get the latest artifact ID
         ARTIFACT_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/nextmcloud/.github/actions/workflows/store-version-artifacts/runs/latest/artifacts" | \
+          "https://api.github.com/repos/nextmcloud/.github/actions/runs/7486908601/artifacts" | \
+          jq -r '.artifacts[0].id')
+        echo "::set-output name=artifact_id::$ARTIFACT_ID"
+
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Get Latest Artifact ID
+      id: get-artifact-id-by-name
+      run: |
+        # Fetch workflows
+        WORKFLOW_NAME="Store version artifacts"
+        WORKFLOW_ID=:"$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}")" \
+          "https://api.github.com/repos/nextmcloud/.github/actions/workflows" | jq -r --arg WORKFLOW_NAME "$WORKFLOW_NAME" '.workflows[] | select(.name == $WORKFLOW_NAME) | .id')"
+        echo "::set-output name=workflow_id::$WORKFLOW_ID"
+        # Use the GitHub API to get the latest artifact ID
+        ARTIFACT_ID=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/nextmcloud/.github/actions/runs/workflow_id/artifacts" | \
           jq -r '.artifacts[0].id')
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
 
@@ -30,7 +47,7 @@ jobs:
 
     - name: Download versions artifact
       run: |
-        # Download the artifact from the second workflow
+        # Download the artifact from the store-version-artifacts workflow
         curl -O -L -J -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           "https://api.github.com/repos/nextmcloud/.github/actions/artifacts/${{ steps.get-artifact-id.outputs.artifact_id }}/zip"
         
