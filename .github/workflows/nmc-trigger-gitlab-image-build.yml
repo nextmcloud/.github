@@ -26,7 +26,7 @@ jobs:
         # Use the GitHub API to get the latest artifact ID
         ARTIFACT_ID="$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           "https://api.github.com/repos/nextmcloud/.github/actions/runs/${{ steps.get-artifact-id.outputs.workflow_id }}/artifacts" | \
-          jq -r '.artifacts[0].id'
+          jq -r '.artifacts[0].id')
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
 
       env:
