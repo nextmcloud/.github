@@ -21,7 +21,7 @@ jobs:
       run: |
         # Fetch workflows
         WORKFLOW_NAME="Store version artifacts"
-        WORKFLOW_RUN_ID=$(curl "https://api.github.com/repos/nextmcloud/.github/actions/runs?&workflow=$WORKFLOW_NAME&per_page=1" | jq -r '.workflow_runs[0].id')
+        WORKFLOW_RUN_ID=$(curl -s "https://api.github.com/repos/nextmcloud/.github/actions/runs?&workflow=$WORKFLOW_NAME&per_page=1" | jq -r '.workflow_runs[0].id')
         echo "Workflow Run ID: $WORKFLOW_RUN_ID"
         echo "::set-output name=workflow_run_id::$WORKFLOW_RUN_ID"
 
@@ -33,7 +33,7 @@ jobs:
       id: get-artifact-id
       run: |
         # Use the GitHub API to get the latest artifact ID
-        ARTIFACT_ID=$(curl "https://api.github.com/repos/nextmcloud/.github/actions/runs/${{ steps.get-workflow-run-id.workflow_run_id }}" | jq -r '.artifacts[].id')
+        ARTIFACT_ID=$(curl -s "https://api.github.com/repos/nextmcloud/.github/actions/runs/${{ steps.get-workflow-run-id.workflow_run_id }}" | jq -r '.artifacts[].id')
         echo "Artifact ID: $ARTIFACT_ID"
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
       
