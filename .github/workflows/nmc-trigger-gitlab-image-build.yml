@@ -43,7 +43,7 @@ jobs:
           ARTIFACT_ID: $ARTIFACT_ID
       
     - name: Cleanup previous artifacts
-      run: rm -f versions_combined.zip
+      run: rm -f versions_combined
         
 
     - name: Download versions artifact
