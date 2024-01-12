@@ -33,7 +33,7 @@ jobs:
       id: get-artifact-id
       run: |
         # Get the latest artifact ID
-        ARTIFACT_ID=$(curl "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts" | jq -r '.artifacts[]?.id')
+        ARTIFACT_ID=$(curl -s "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts" | jq -r '.artifacts[0].id')
         echo "Artifact ID: $ARTIFACT_ID"
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
       
