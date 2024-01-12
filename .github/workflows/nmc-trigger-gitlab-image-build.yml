@@ -29,6 +29,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: $WORKFLOW_RUN_ID
 
+    - name: Cleanup previous artifacts
+      run: rm -f versions_combined
+
     - name: Get Artifact ID
       id: get-artifact-id
       run: |
@@ -41,10 +44,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
           ARTIFACT_ID: $ARTIFACT_ID
-      
-    - name: Cleanup previous artifacts
-      run: rm -f versions_combined
-        
 
     - name: Download versions artifact
       id: download-artifact
