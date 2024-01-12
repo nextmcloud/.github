@@ -61,3 +61,4 @@ jobs:
         with:
           name: versions-combined
           path: version-store
+          if-no-files-found: warn
