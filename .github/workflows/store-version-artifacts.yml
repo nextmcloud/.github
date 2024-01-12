@@ -56,9 +56,6 @@ jobs:
           echo "${{ steps.retrieve-nmcsharing.outputs.VERSION }}" >> versions-combined.txt
           echo "${{ steps.retrieve-nmcsettings.outputs.VERSION }}" >> versions-combined.txt
 
-      - name: Create version-store directory
-        run: mkdir version-store
-
       - name: Upload combined version artifacts
         uses: actions/upload-artifact@v2
         with:
