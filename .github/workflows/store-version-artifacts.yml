@@ -60,4 +60,4 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: versions-combined
-          path: versions-combined.txt
+          path: version-store
