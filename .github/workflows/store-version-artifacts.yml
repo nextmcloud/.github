@@ -56,6 +56,11 @@ jobs:
           echo "${{ steps.retrieve-nmcsharing.outputs.VERSION }}" >> versions-combined.txt
           echo "${{ steps.retrieve-nmcsettings.outputs.VERSION }}" >> versions-combined.txt
 
+      - name: Debug version-store contents
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Contents of version-store: $(ls -a version-store)"
+            
       - name: Upload combined version artifacts
         uses: actions/upload-artifact@v2
         with:
