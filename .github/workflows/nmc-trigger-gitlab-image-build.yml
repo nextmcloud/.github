@@ -46,11 +46,11 @@ jobs:
       id: download-artifact
       run: |
         # Download the artifact from the store-version-artifacts workflow
-        curl "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID"
+        curl -s "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID"
       
       env:
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
-          ARTIFACT_ID: ${{ steps.get-artifact_id.outputs.artifact_id }}
+          ARTIFACT_ID: ${{ steps.get-artifact-id.outputs.artifact_id }}
         # Extract the archive
 
     - name: Trigger Nmc deployment image building with versions
