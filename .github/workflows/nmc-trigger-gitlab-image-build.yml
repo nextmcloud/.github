@@ -21,7 +21,7 @@ jobs:
       run: |
         # Fetch workflows
         WORKFLOW_NAME="Store version artifacts"
-        WORKFLOW_RUN_ID=$(curl -s "https://api.github.com/repos/nextmcloud/.github/actions/runs" | jq -r --arg WORKFLOW_NAME "$WORKFLOW_NAME" '.workflow_runs[1] | select(.name == $WORKFLOW_NAME) | .id')
+        WORKFLOW_RUN_ID=$(curl -s "https://api.github.com/repos/nextmcloud/.github/actions/runs" | jq -r --arg WORKFLOW_NAME "$WORKFLOW_NAME" '.workflow_runs[3] | select(.name == $WORKFLOW_NAME) | .id')
         echo "Workflow Run ID: $WORKFLOW_RUN_ID"
         echo "::set-output name=workflow_run_id::$WORKFLOW_RUN_ID"
 
