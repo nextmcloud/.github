@@ -50,6 +50,7 @@ jobs:
           "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/versions_combined.zip" \
           -w '%{filename_effective}')
         echo "Downloaded file: $FILENAME"
+        unzip -q "$FILENAME"
       
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
