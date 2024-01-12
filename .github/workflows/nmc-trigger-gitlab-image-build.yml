@@ -27,12 +27,12 @@ jobs:
 
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKFLOW_ID: $WORKFLOW_RUN_ID
+          WORKFLOW_RUN_ID: $WORKFLOW_RUN_ID
 
     - name: Get Artifact ID
       id: get-artifact-id
       run: |
-        # Use the GitHub API to get the latest artifact ID
+        # Get the latest artifact ID
         ARTIFACT_ID=$(curl "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts" | jq -r '.artifacts[]?.id')
         echo "Artifact ID: $ARTIFACT_ID"
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
@@ -42,13 +42,13 @@ jobs:
           ARTIFACT_ID: $ARTIFACT_ID
 
     - name: Download versions artifact
+      id: download-artifact
       run: |
         # Download the artifact from the store-version-artifacts workflow
-        curl -O -L -J -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/nextmcloud/.github/actions/artifacts/${{ steps.get-artifact-id.outputs.artifact_id }}/zip"
+        curl "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID"
         
         # Extract the archive
-        unzip versions-combined.zip
+        unzip $ARTIFACT_ID
       # Replace username/repo and ARTIFACT_ID with your repository and artifact details
 
     - name: Trigger Nmc deployment image building with versions
