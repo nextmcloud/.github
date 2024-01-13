@@ -65,5 +65,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: versions-combined
-          path: ${{ github.workspace }}/version-store
+          path: ${{ github.workspace }}/version-store/versions-combined.txt
           if-no-files-found: warn
