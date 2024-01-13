@@ -58,6 +58,7 @@ jobs:
 
       - name: Debug version-store contents
         run: |
+          mkdir version-store
           echo "Current directory: $(pwd)"
           echo "Contents of version-store: $(ls -a version-store)"
           echo "${{ github.workspace }}"
