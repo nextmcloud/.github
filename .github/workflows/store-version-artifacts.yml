@@ -60,6 +60,7 @@ jobs:
         run: |
           echo "Current directory: $(pwd)"
           echo "Contents of version-store: $(ls -a version-store)"
+          echo "${{ github.workspace }}"
             
       - name: Upload combined version artifacts
         uses: actions/upload-artifact@v2
