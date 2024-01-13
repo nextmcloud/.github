@@ -51,6 +51,15 @@ jobs:
         run: mkdir -p ${{ github.workspace }}/version-store
         working-directory: ${{ github.workspace }}
 
+      - name: Verify version-store directory
+        run: |
+          if [ -d "${{ github.workspace }}/version-store" ]; then
+            echo "version-store directory exists."
+            echo "Contents of version-store: $(ls -a ${{ github.workspace }}/version-store)"
+          else
+            echo "version-store directory does not exist."
+          fi
+
       - name: Debug version-store contents
         run: |
           echo "${{ github.workspace }}"
