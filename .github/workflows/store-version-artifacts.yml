@@ -60,6 +60,10 @@ jobs:
             echo "version-store directory does not exist."
           fi
 
+      - name: Debug File Permissions
+        run: stat -c "%a %n" ${{ github.workspace }}/version-store/versions-combined.txt
+        
+
       - name: Debug version-store contents
         run: |
           echo "${{ github.workspace }}"
