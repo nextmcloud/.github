@@ -48,8 +48,8 @@ jobs:
           echo "::set-output name=VERSION::$VERSION"
 
       - name: Create and set version-store directory
-        run: mkdir ${{ github.workspace }}/version-store
-        working-directory: ${{ github.workspace }}/version-store
+        run: mkdir -p ${{ github.workspace }}/version-store
+        working-directory: ${{ github.workspace }}
 
       - name: Debug version-store contents
         run: |
