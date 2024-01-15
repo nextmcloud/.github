@@ -62,7 +62,7 @@ jobs:
         # Extract the archive
 
     - name: Print contents of versions-combined.txt
-      run: ls -a ${{ github.workspace }}/version-store/
+      run: ls -a ${{ github.workspace }}/1169204622
       
 
     - name: Trigger Nmc deployment image building with versions
