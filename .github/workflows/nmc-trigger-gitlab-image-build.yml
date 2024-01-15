@@ -38,10 +38,17 @@ jobs:
         echo "Artifact ID: $ARTIFACT_ID"
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
 
-        # Construct artifact url
+        # Construct Artifact URL
         ARTIFACT_URL="https://api.github.com/repos/nextmcloud/.github/actions/artifacts/$ARTIFACT_ID"
         echo "::set-output name=artifact_url::$ARTIFACT_URL"
         echo "Artifact URL: $ARTIFACT_URL"
+
+        # Construct Download URL
+        set -x
+        DOWNLOAD_URL=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+        "$ARTIFACT_URL" | jq -r '.archive_download_url')
+        echo "::set-output name=download_url::$DOWNLOAD_URL"
+        echo "Download URL: $DOWNLOAD_URL"
 
         # Confirm File name
         FILENAME=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
@@ -54,14 +61,14 @@ jobs:
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
           ARTIFACT_ID: $ARTIFACT_ID
           ARTIFACT_URL: $ARTIFACT_URL
+          DOWNLOAD_URL: $DOWNLOAD_URL
           FILENAME: $FILENAME
 
     - name: Download and extract versions artifact
       id: download-artifact
       run: |
-        # Download the artifact from the store-version-artifacts workflow
-        set -x
-        curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "$ARTIFACT_URL" | jq -r '.archive_download_url'
+        curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+        "$DOWNLOAD_URL"
         echo "Downloaded file: $FILENAME"
 
         # List workspace contents
@@ -81,6 +88,7 @@ jobs:
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
           ARTIFACT_ID: ${{ steps.get-artifact-id.outputs.artifact_id }}
           ARTIFACT_URL: ${{ steps.get-artifact-id.outputs.artifact_url }}
+          DOWNLOAD_URL: ${{ steps.get-artifact-id.outputs.download_url }}
           FILENAME: ${{ steps.get-artifact-id.outputs.filename }}
       
     - name: Trigger Nmc deployment image building with versions
