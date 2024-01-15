@@ -40,7 +40,7 @@ jobs:
 
         # Construct artifact url
         ARTIFACT_URL=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-        "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar"
+        "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar")
         echo "::set-output name=artifact_url::$ARTIFACT_URL"
         echo "Artifact URL: $ARTIFACT_URL"
 
