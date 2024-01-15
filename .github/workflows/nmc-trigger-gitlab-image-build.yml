@@ -65,6 +65,9 @@ jobs:
         curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/$OWNER/$REPO/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar
         echo "Downloaded file: $FILENAME"
 
+        # List workspace contents
+        ls -a ${{ github.workspace }}
+
         #Extract artifact
         tar -xvf ${{ github.workspace }}/tar
 
@@ -74,12 +77,7 @@ jobs:
           ARTIFACT_ID: ${{ steps.get-artifact-id.outputs.artifact_id }}
           ARTIFACT_URL: ${{ steps.get-artifact-id.outputs.artifact_url }}
           FILENAME: ${{ steps.get-artifact-id.outputs.filename }}
-         
-    - name: Print contents of workspace for debug
-      run: | 
-        ls -a ${{ github.workspace }}
       
-
     - name: Trigger Nmc deployment image building with versions
       env:
         GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
