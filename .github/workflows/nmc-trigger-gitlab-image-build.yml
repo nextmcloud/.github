@@ -62,8 +62,8 @@ jobs:
           FILENAME: $FILENAME
         # Extract the archive
 
-    - name: Print contents of versions-combined.txt
-      run: ls -a ${{ github.workspace }}/1169204622
+    - name: Print contents of workspace for debug
+      run: ls -a ${{ github.workspace }}
       
 
     - name: Trigger Nmc deployment image building with versions
