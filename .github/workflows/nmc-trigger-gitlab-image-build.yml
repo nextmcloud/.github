@@ -39,15 +39,17 @@ jobs:
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
 
         # Construct artifact url
-        ARTIFACT_URL="https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar"
-        echo "Artifact URL: $ARTIFACT_URL"
+        ARTIFACT_URL=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+        "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar"
         echo "::set-output name=artifact_url::$ARTIFACT_URL"
+        echo "Artifact URL: $ARTIFACT_URL"
 
         # Confirm File name
         FILENAME=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/versions-combined" \
+          "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar" \
           -w '%{filename_effective}')
         echo "::set-output name=filename::$FILENAME"
+        echo "File name is: $FILENAME"
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
