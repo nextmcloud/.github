@@ -41,7 +41,7 @@ jobs:
         # Construct artifact url
         ARTIFACT_URL="https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar"
         echo "Artifact URL: $ARTIFACT_URL"
-        echo "::set-output name=artifact_url::$ARTIFACT_url"
+        echo "::set-output name=artifact_url::$ARTIFACT_URL"
 
         # Confirm File name
         FILENAME=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
