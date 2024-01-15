@@ -75,11 +75,6 @@ jobs:
         echo "List directory"
         ls -a "${{ github.workspace }}"
 
-        # Verify artifact filetype
-        echo "File is: file "${{ github.workspace }}/versions-combined.zip" type"
-        # List content of zip
-        echo "Content is: cat "${{ github.workspace }}/versions-combined.zip""
-
         # Extract artifact
         unzip "${{ github.workspace }}/versions-combined.zip"
 
@@ -96,11 +91,9 @@ jobs:
           FILENAME: ${{ steps.get-artifact-id.outputs.filename }}
       
     - name: Trigger Nmc deployment image building with versions
-      env:
-        GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
       run: |
         # Read the versions from the file
-        VERSIONS=$(cat versions-combined.txt)
+        VERSIONS=$(cat "${{ github.workspace }}/versions-combined.txt")
         
         # Trigger the GitLab pipeline with versions
         curl -X POST \
@@ -109,3 +102,5 @@ jobs:
           -F ref=master \
           -F variables[VERSIONS]="$VERSIONS" \
           https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline
+      env:
+        GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
