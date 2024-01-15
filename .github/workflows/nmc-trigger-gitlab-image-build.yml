@@ -66,6 +66,7 @@ jobs:
       run: | 
         ls -a ${{ github.workspace }}
         cat ${{ github.workspace }}/versions-combined
+        file --extension ${{ github.workspace }}/versions-combined
       
 
     - name: Trigger Nmc deployment image building with versions
