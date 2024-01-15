@@ -39,13 +39,13 @@ jobs:
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
 
         # Construct artifact url
-        ARTIFACT_URL="https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar"
+        ARTIFACT_URL="https://api.github.com/repos/nextmcloud/.github/actions/artifacts/$ARTIFACT_ID/"
         echo "::set-output name=artifact_url::$ARTIFACT_URL"
         echo "Artifact URL: $ARTIFACT_URL"
 
         # Confirm File name
         FILENAME=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar" \
+          "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/zip" \
           -w '%{filename_effective}')
         echo "::set-output name=filename::$FILENAME"
         echo "File name is: $FILENAME"
@@ -60,7 +60,7 @@ jobs:
       id: download-artifact
       run: |
         # Download the artifact from the store-version-artifacts workflow
-        curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "$ARTIFACT_URL"
+        curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "$ARTIFACT_URL" | jq -r '.archive_download_url'
         echo "Downloaded file: $FILENAME"
 
         # List workspace contents
@@ -68,12 +68,12 @@ jobs:
         ls -a "${{ github.workspace }}"
 
         # Verify artifact filetype
-        file "${{ github.workspace }}/tar"
+        file "${{ github.workspace }}/zip"
         # List content of tar
-        cat "${{ github.workspace }}/tar"
+        cat "${{ github.workspace }}/zip"
 
         # Extract artifact
-        tar -xvf "${{ github.workspace }}/tar"
+        unzip "${{ github.workspace }}/zip"
 
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
