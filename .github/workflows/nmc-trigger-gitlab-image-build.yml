@@ -76,12 +76,16 @@ jobs:
         ls -a "${{ github.workspace }}"
 
         # Verify artifact filetype
-        file "${{ github.workspace }}/versions-combined.zip"
-        # List content of tar
-        cat "${{ github.workspace }}/versions-combined.zip"
+        echo "File is: file "${{ github.workspace }}/versions-combined.zip" type"
+        # List content of zip
+        echo "Content is: cat "${{ github.workspace }}/versions-combined.zip""
 
         # Extract artifact
         unzip "${{ github.workspace }}/versions-combined.zip"
+
+        # Re-list workspace contents
+        echo "List directory"
+        ls -a "${{ github.workspace }}"
 
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
