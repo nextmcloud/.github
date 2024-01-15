@@ -62,7 +62,7 @@ jobs:
       id: download-artifact
       run: |
         # Download the artifact from the store-version-artifacts workflow
-        curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" $ARTIFACT_URL
+        curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/$OWNER/$REPO/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar
         echo "Downloaded file: $FILENAME"
 
       env:
