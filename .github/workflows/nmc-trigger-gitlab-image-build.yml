@@ -53,6 +53,7 @@ jobs:
           "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/versions-combined" \
           -w '%{filename_effective}')
         echo "Downloaded file: $FILENAME"
+        echo "GitHub Actions workspace: ${{ github.workspace }}"
       
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
