@@ -50,10 +50,9 @@ jobs:
       run: |
         # Download the artifact from the store-version-artifacts workflow
         FILENAME=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/zip" \
+          "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/versions-combined.txt" \
           -w '%{filename_effective}')
         echo "Downloaded file: $FILENAME"
-        unzip -q $FILENAME
       
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,6 +60,10 @@ jobs:
           ARTIFACT_ID: ${{ steps.get-artifact-id.outputs.artifact_id }}
           FILENAME: $FILENAME
         # Extract the archive
+
+    - name: Print contents of versions-combined.txt
+      run: cat ${{ github.workspace }}/version-store/versions-combined.txt
+      
 
     - name: Trigger Nmc deployment image building with versions
       env:
