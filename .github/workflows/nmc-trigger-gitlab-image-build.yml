@@ -29,9 +29,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: $WORKFLOW_RUN_ID
 
-    - name: Cleanup previous artifacts
-      run: rm -f versions_combined
-
     - name: Get Artifact ID
       id: get-artifact-id
       run: |
@@ -68,7 +65,10 @@ jobs:
         # List workspace contents
         ls -a ${{ github.workspace }}
 
-        #Extract artifact
+        # Verify artifact filetype
+        file ${{ github.workspace }}/$FILENAME
+
+        # Extract artifact
         tar -xvf ${{ github.workspace }}/tar
 
       env:
