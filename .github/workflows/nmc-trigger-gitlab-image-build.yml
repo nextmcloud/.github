@@ -39,8 +39,7 @@ jobs:
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
 
         # Construct artifact url
-        ARTIFACT_URL=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-        "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar")
+        ARTIFACT_URL="https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar"
         echo "::set-output name=artifact_url::$ARTIFACT_URL"
         echo "Artifact URL: $ARTIFACT_URL"
 
@@ -65,14 +64,16 @@ jobs:
         echo "Downloaded file: $FILENAME"
 
         # List workspace contents
-        ls -a ${{ github.workspace }}
+        echo "List directory"
+        ls -a "${{ github.workspace }}"
 
         # Verify artifact filetype
-        echo "The artifact is: file ${{ github.workspace }}/$FILENAME"
-        cat ${{ github.workspace }}/$FILENAME
+        file "${{ github.workspace }}/tar"
+        # List content of tar
+        cat "${{ github.workspace }}/tar"
 
         # Extract artifact
-        tar -xvf ${{ github.workspace }}/tar
+        tar -xvf "${{ github.workspace }}/tar"
 
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
