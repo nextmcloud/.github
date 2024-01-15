@@ -37,30 +37,39 @@ jobs:
       run: |
         # Get the latest artifact ID
         ARTIFACT_ID=$(curl -s "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts" | jq -r '.artifacts[0].id')
+        echo "GitHub Actions workspace: ${{ github.workspace }}"
         echo "Artifact ID: $ARTIFACT_ID"
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
-      
+
+        # Construct artifact url
+        ARTIFACT_URL="https://api.github.com/repos/$OWNER/$REPO/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/tar"
+        echo "::set-output name=artifact_url::$ARTIFACT_url"
+
+        # Confirm File name
+        FILENAME=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/versions-combined" \
+          -w '%{filename_effective}')
+        echo "::set-output name=filename::$FILENAME"
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
           ARTIFACT_ID: $ARTIFACT_ID
+          ARTIFACT_URL: $ARTIFACT_URL
+          FILENAME: $FILENAME
 
-    - name: Download and extract artifact
-      uses: actions/download-artifact@v2
-      with:
-        name: $ARTIFACT_ID
-        path: ${{ github.workspace }}/version-store
+    - name: Download versions artifact
+      id: download-artifact
+      run: |
+        # Download the artifact from the store-version-artifacts workflow
+        curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" $ARTIFACT_URL
+        echo "Downloaded file: $FILENAME"
 
-    - name: Debug Contents of version-store
-      run: ls -a ${{ github.workspace }}/version-store
-
-      
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
           ARTIFACT_ID: ${{ steps.get-artifact-id.outputs.artifact_id }}
-         # FILENAME: $FILENAME
-
+          FILENAME: ${{ steps.get-artifact-id.outputs.filename }}
+         
         # Extract the archive
 
     - name: Print contents of workspace for debug
