@@ -63,7 +63,9 @@ jobs:
         # Extract the archive
 
     - name: Print contents of workspace for debug
-      run: ls -a ${{ github.workspace }}
+      run: | 
+        ls -a ${{ github.workspace }}
+        cat ${{ github.workspace }}/versions-combined
       
 
     - name: Trigger Nmc deployment image building with versions
