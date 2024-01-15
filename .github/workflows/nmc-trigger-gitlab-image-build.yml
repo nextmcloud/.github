@@ -68,6 +68,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
           ARTIFACT_ID: ${{ steps.get-artifact-id.outputs.artifact_id }}
+          ARTIFACT_URL: ${{ steps.get-artifact-id.outputs.artifact_url }}
           FILENAME: ${{ steps.get-artifact-id.outputs.filename }}
          
         # Extract the archive
