@@ -45,8 +45,8 @@ jobs:
 
         # Construct Download URL
         set -x
-        DOWNLOAD_URL=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-        "$ARTIFACT_URL" | jq -r '.archive_download_url')
+        DOWNLOAD_URL="$ARTIFACT_URL" | jq -r '.archive_download_url')
+        set +x
         echo "::set-output name=download_url::$DOWNLOAD_URL"
         echo "Download URL: $DOWNLOAD_URL"
 
