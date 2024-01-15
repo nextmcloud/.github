@@ -39,7 +39,7 @@ jobs:
         echo "::set-output name=artifact_id::$ARTIFACT_ID"
 
         # Construct artifact url
-        ARTIFACT_URL="https://api.github.com/repos/nextmcloud/.github/actions/artifacts/$ARTIFACT_ID/"
+        ARTIFACT_URL="https://api.github.com/repos/nextmcloud/.github/actions/artifacts/$ARTIFACT_ID"
         echo "::set-output name=artifact_url::$ARTIFACT_URL"
         echo "Artifact URL: $ARTIFACT_URL"
 
