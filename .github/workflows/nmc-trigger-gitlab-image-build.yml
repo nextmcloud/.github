@@ -45,21 +45,22 @@ jobs:
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
           ARTIFACT_ID: $ARTIFACT_ID
 
-    - name: Download versions artifact
-      id: download-artifact
-      run: |
-        # Download the artifact from the store-version-artifacts workflow
-        FILENAME=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/versions-combined" \
-          -w '%{filename_effective}')
-        echo "Downloaded file: $FILENAME"
-        echo "GitHub Actions workspace: ${{ github.workspace }}"
+    - name: Download and extract artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: $ARTIFACT_ID
+        path: ${{ github.workspace }}/version-store
+
+    - name: Debug Contents of version-store
+      run: ls -a ${{ github.workspace }}/version-store
+
       
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
           ARTIFACT_ID: ${{ steps.get-artifact-id.outputs.artifact_id }}
-          FILENAME: $FILENAME
+         # FILENAME: $FILENAME
+
         # Extract the archive
 
     - name: Print contents of workspace for debug
