@@ -6,12 +6,10 @@ on:
       branch:
         type: string
         description: 'Branch to build a package from'
-        required: false
   workflow_dispatch:
     inputs:
       branch:
         description: 'Branch to build a package from'
-        required: false
 jobs:
   combine-versions:
     runs-on: ubuntu-latest
