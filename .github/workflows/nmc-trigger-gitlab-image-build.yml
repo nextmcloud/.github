@@ -98,9 +98,9 @@ jobs:
         # Trigger the GitLab pipeline with versions
         curl -X POST \
           --fail \
-          -F token=$GITLAB_TOKEN \
+          -F token=glptt-8a48a4482a148e34106cc1ebf5bf30eebd796db0 \
           -F ref=nmc/build-first-v26 \
-          "$VERSIONS" \
+          "$VERSIONS"\
           https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline
       env:
         GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
