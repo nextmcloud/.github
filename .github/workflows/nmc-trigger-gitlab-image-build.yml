@@ -5,10 +5,18 @@ on:
     - cron: "0 15 * * *"
   
   workflow_call:
+
+  workflow_run:
+    workflows: ["Store version artifacts"]
+    types:
+      - completed
   
   workflow_dispatch: # manual
 
 jobs:
+  store-version:
+      uses: nextmcloud/.github/.github/workflows/store-version-artifacts.yml@nmc/2027-build-test-rtoth
+
   trigger-pipeline:
     runs-on: ubuntu-latest
 
