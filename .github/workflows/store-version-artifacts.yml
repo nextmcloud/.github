@@ -29,7 +29,7 @@ jobs:
           TAG_NAMES=($(curl -s https://api.github.com/repos/nextmcloud/server/releases | jq -r '.[].tag_name'))
           
           for VERSION in "${TAG_NAMES[@]}"; do
-            if [[ "$VERSION" == ${{ inputs.options}}-* ]]; then
+            if [[ "$VERSION" == ${{ inputs.branch }}-* ]]; then
               echo "::set-output name=VERSION::$VERSION"
               echo "$VERSION"
               break  # Exit the loop once a match is found
