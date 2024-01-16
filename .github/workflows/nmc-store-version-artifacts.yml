@@ -1,6 +1,9 @@
 name: Store version artifacts
 
 on:
+  schedule:
+    - cron: "0 15 * * *"
+    
   workflow_call:
     inputs:
       branch:

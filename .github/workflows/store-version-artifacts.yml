@@ -1,13 +1,20 @@
 name: Store version artifacts
 
 on:
+  schedule:
+    - cron: "0 15 * * *"
+
   workflow_call:
+    inputs:
+      branch: 
+        type: string
+        description: 'Source of workflow'
 
   workflow_dispatch:
     inputs:
       branch:
         type: choice
-        description: Branch to build a package from
+        description: 'Source of versions'
         options: 
           - main
           - stable25
@@ -31,7 +38,7 @@ jobs:
           for VERSION in "${TAG_NAMES[@]}"; do
             if [[ "$VERSION" == ${{ inputs.branch }}-* ]]; then
               echo "::set-output name=VERSION::$VERSION"
-              echo "$VERSION"
+              echo "Latest ${{ inputs.branch }} tag is $VERSION"
               break  # Exit the loop once a match is found
             fi
           done
