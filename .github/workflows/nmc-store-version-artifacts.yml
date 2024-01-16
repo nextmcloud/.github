@@ -2,18 +2,16 @@ name: Store version artifacts
 
 on:
   workflow_call:
-    input:
-    branch:
-      type: choice
-      description: Branch to build a package from
-      options: 
-        - master
-        - stable25
-        - stable26
-        - stable27
-        - stable28
+    inputs:
+      branch:
+        type: string
+        description: 'Branch to build a package from'
+        required: true
   workflow_dispatch:
-
+    inputs:
+      branch:
+        description: 'Branch to build a package from'
+        required: true
 jobs:
   combine-versions:
     runs-on: ubuntu-latest
