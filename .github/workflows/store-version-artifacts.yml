@@ -5,10 +5,6 @@ on:
 
   workflow_dispatch:
     inputs:
-      increment:
-        description: 'Release increment'
-        required: true
-        type: number
       branch:
         type: choice
         description: Branch to build a package from
@@ -31,10 +27,10 @@ jobs:
         id: retrieve-server
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/server/releases | jq -r '.[].tag_name')
-          if [ "$TARGET_TRUNK" = "master" ]; then
+          if [ "$VERSION" = "stable25-*" ]; then
             echo "::set-output name=VERSION::$VERSION"
           else
-            
+            echo "Nope"
           fi
 
       - name: Get version of nmcprovisioning
