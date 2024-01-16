@@ -38,11 +38,11 @@ jobs:
           for VERSION in "${TAG_NAMES[@]}"; do
             if [[ "$VERSION" == ${{ inputs.branch }}-* ]]; then
               echo "::set-output name=VERSION::$VERSION"
-              echo "$VERSION"
+              echo "Latest ${{ inputs.branch }} tag is $VERSION"
               break  # Exit the loop once a match is found
             fi
           done
-      
+          
       - name: Get version of nmcprovisioning
         id: retrieve-nmcprovisioning
         run: |
@@ -60,11 +60,13 @@ jobs:
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmctheme/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
+
       - name: Get version of nmcsharing
         id: retrieve-nmcsharing
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsharing/releases/latest | jq -r '.tag_name')
           echo "::set-output name=VERSION::$VERSION"
+
       - name: Get version of nmcsettings
         id: retrieve-nmcsettings
         run: |
