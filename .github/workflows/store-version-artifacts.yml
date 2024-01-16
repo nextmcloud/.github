@@ -36,12 +36,12 @@ jobs:
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmctheme/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
-      - name: Get version of nmctheme
+      - name: Get version of nmcsharing
         id: retrieve-nmcsharing
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsharing/releases/latest | jq -r '.tag_name')
           echo "::set-output name=VERSION::$VERSION"
-      - name: Get version of nmctheme
+      - name: Get version of nmcsettings
         id: retrieve-nmcsettings
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsettings/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
@@ -74,12 +74,12 @@ jobs:
         
       - name: Combine version artifacts
         run: |
-          echo "${{ steps.retrieve-server.outputs.VERSION }}" > ${{ github.workspace }}/version-store/versions-combined.txt
-          echo "${{ steps.retrieve-nmcprovisioning.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
-          echo "${{ steps.retrieve-user_oidc.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
-          echo "${{ steps.retrieve-nmctheme.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
-          echo "${{ steps.retrieve-nmcsharing.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
-          echo "${{ steps.retrieve-nmcsettings.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "[NC_DEFAULT_TAG]${{ steps.retrieve-server.outputs.VERSION }}" > ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "[nmcprovisioning]${{ steps.retrieve-nmcprovisioning.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "[user_oidc]${{ steps.retrieve-user_oidc.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "[nmctheme]${{ steps.retrieve-nmctheme.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "[nmcsharing]${{ steps.retrieve-nmcsharing.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "[nmcsettings]${{ steps.retrieve-nmcsettings.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
             
       - name: Upload combined version artifacts
         uses: actions/upload-artifact@v2
