@@ -4,6 +4,9 @@ on:
   workflow_call:
     inputs:
       branch:
+        - master
+        - stable25
+        - stable26
         type: string
         description: 'Branch to build a package from'
   workflow_dispatch:
