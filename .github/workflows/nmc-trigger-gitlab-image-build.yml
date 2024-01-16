@@ -9,17 +9,10 @@ on:
     types:
       - completed
   
-  workflow_dispatch:
-    inputs:
-      branch:
-        type: choice
-        options: 
-          - master
-          - nmc/2027-custom-build-27
-          - nmc/2027-custom-build-test-rtoth
-        default: nmc/2027-custom-build-test-rtoth
+  workflow_dispatch: #manual
 
 jobs:
+  
   store-version:
       uses: nextmcloud/.github/.github/workflows/store-version-artifacts.yml@nmc/2027-build-test-rtoth
 
@@ -29,6 +22,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.workflow_run.head_branch || 'main' || 'master' }}
 
     - name: Get Workflow run ID
       id: get-workflow-run-id
