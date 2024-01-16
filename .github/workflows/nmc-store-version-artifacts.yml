@@ -30,9 +30,6 @@ jobs:
             
           fi
 
-          env:
-            TARGET_TRUNK:  ${{ inputs.trunk }}
-
       - name: Get version of nmcprovisioning
         id: retrieve-nmcprovisioning
         run: |
