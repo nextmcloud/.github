@@ -38,7 +38,7 @@ jobs:
           for VERSION in "${TAG_NAMES[@]}"; do
             if [[ "$VERSION" == ${{ inputs.branch }}-* ]]; then
               echo "::set-output name=VERSION::$VERSION"
-              echo "$VERSION"
+              echo "Latest ${{ inputs.branch }} is of $VERSION"
               break  # Exit the loop once a match is found
             fi
           done
