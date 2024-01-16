@@ -50,8 +50,6 @@ jobs:
       - name: Create and set version-store directory
         run: |
           mkdir -p ${{ github.workspace }}/version-store
-          # Cleanup previous version store file before upload
-          rm ${{ github.workspace }}/version-store/versions-combined.txt
           # Create version store file
           touch ${{ github.workspace }}/version-store/versions-combined.txt
         working-directory: ${{ github.workspace }}
