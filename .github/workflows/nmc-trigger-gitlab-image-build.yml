@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: "54 15 * * *"
   
+  workflow_call:
+
   workflow_run:
     workflows: ["Store version artifacts"]
     types:
