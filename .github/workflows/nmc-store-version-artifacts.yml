@@ -2,7 +2,16 @@ name: Store version artifacts
 
 on:
   workflow_call:
-
+    input:
+    branch:
+      type: choice
+      description: Branch to build a package from
+      options: 
+        - master
+        - stable25
+        - stable26
+        - stable27
+        - stable28
   workflow_dispatch:
 
 jobs:
@@ -16,8 +25,17 @@ jobs:
       - name: Get version of server
         id: retrieve-server
         run: |
-          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/server/releases/latest | jq -r '.tag_name')
-          echo "::set-output name=VERSION::$VERSION" 
+          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/server/releases | jq -r '.[].tag_name')
+          if [ "$TARGET_TRUNK" = "master" ]; then
+            echo "::set-output name=VERSION::$VERSION"
+          else
+              echo ::notice::"BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}'"
+              echo "** BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}' **" >> $GITHUB_STEP_SUMMARY
+              echo ::output name=buildtype::stable
+          fi
+
+          env:
+            TARGET_TRUNK:  ${{ inputs.trunk }}
 
       - name: Get version of nmcprovisioning
         id: retrieve-nmcprovisioning
@@ -36,28 +54,55 @@ jobs:
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmctheme/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
-      - name: Get version of nmctheme
+      - name: Get version of nmcsharing
         id: retrieve-nmcsharing
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsharing/releases/latest | jq -r '.tag_name')
           echo "::set-output name=VERSION::$VERSION"
-      - name: Get version of nmctheme
+      - name: Get version of nmcsettings
         id: retrieve-nmcsettings
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsettings/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
 
+      - name: Create and set version-store directory
+        run: |
+          mkdir -p ${{ github.workspace }}/version-store
+          # Create version store file
+          touch ${{ github.workspace }}/version-store/versions-combined.txt
+        working-directory: ${{ github.workspace }}
+
+      - name: Verify version-store directory
+        run: |
+          if [ -d "${{ github.workspace }}/version-store" ]; then
+            echo "version-store directory exists."
+            echo "Contents of version-store: $(ls -a ${{ github.workspace }}/version-store)"
+          else
+            echo "version-store directory does not exist."
+          fi
+
+      - name: Debug File Permissions
+        run: stat -c "%a %n" ${{ github.workspace }}/version-store/versions-combined.txt
+        
+
+      - name: Debug version-store contents
+        run: |
+          echo "${{ github.workspace }}"
+          echo "Current directory: $(pwd)"
+          echo "Contents of version-store: $(ls -a version-store)"
+        
       - name: Combine version artifacts
         run: |
-          echo "[NC_DEFAULT_TAG]=${{ steps.retrieve-server.outputs.VERSION }}" > versions-combined.txt
-          echo "${{ steps.retrieve-nmcprovisioning.outputs.VERSION }}" >> versions-combined.txt
-          echo "${{ steps.retrieve-user_oidc.outputs.VERSION }}" >> versions-combined.txt
-          echo "${{ steps.retrieve-nmctheme.outputs.VERSION }}" >> versions-combined.txt
-          echo "${{ steps.retrieve-nmcsharing.outputs.VERSION }}" >> versions-combined.txt
-          echo "${{ steps.retrieve-nmcsettings.outputs.VERSION }}" >> versions-combined.txt
-
+          echo "-F variables[NC_DEFAULT_TAG]=${{ steps.retrieve-server.outputs.VERSION }}" > ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "-F variables[nmcprovisioning]=${{ steps.retrieve-nmcprovisioning.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "-F variables[user_oidc]=${{ steps.retrieve-user_oidc.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "-F variables[nmctheme]=${{ steps.retrieve-nmctheme.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "-F variables[nmcsharing]=${{ steps.retrieve-nmcsharing.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "-F variables[nmcsettings]=${{ steps.retrieve-nmcsettings.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
+               
       - name: Upload combined version artifacts
         uses: actions/upload-artifact@v2
         with:
           name: versions-combined
-          path: versions-combined.txt
+          path: ${{ github.workspace }}/version-store/versions-combined.txt
+          if-no-files-found: warn

@@ -15,7 +15,7 @@ on:
 
 jobs:
   store-version:
-      uses: nextmcloud/.github/.github/workflows/store-version-artifacts.yml@nmc/2027-build-test-rtoth
+      uses: nextmcloud/.github/.github/workflows/nmc-store-version-artifacts.yml@nmc/2027-build-test-rtoth
 
   trigger-pipeline:
     runs-on: ubuntu-latest
@@ -107,7 +107,7 @@ jobs:
         curl -X POST \
           --fail \
           -F token=glptt-8a48a4482a148e34106cc1ebf5bf30eebd796db0 \
-          -F ref=nmc/build-first-v26 \
+          -F ref=master \
           "$VERSIONS" \
           https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline
       env:

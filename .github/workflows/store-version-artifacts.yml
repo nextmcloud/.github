@@ -2,7 +2,11 @@ name: Store version artifacts
 
 on:
   workflow_call:
-
+    inputs:
+      trunk:
+        description: trunk branch name for the repo (e.g., master, main, trunk, ...)
+      required: true
+      type: string 
   workflow_dispatch:
 
 jobs:
@@ -16,8 +20,17 @@ jobs:
       - name: Get version of server
         id: retrieve-server
         run: |
-          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/server/releases/latest | jq -r '.tag_name')
-          echo "::set-output name=VERSION::$VERSION" 
+          if [ "$TARGET_TRUNK" = "master" ]; then
+          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/server/releases | jq -r '.[].tag_name')
+            echo "::set-output name=VERSION::$VERSION"
+          else
+              echo ::notice::"BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}'"
+              echo "** BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}' **" >> $GITHUB_STEP_SUMMARY
+              echo ::output name=buildtype::stable
+          fi
+
+          env:
+            TARGET_TRUNK:  ${{ inputs.trunk }}
 
       - name: Get version of nmcprovisioning
         id: retrieve-nmcprovisioning
