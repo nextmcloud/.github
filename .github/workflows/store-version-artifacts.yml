@@ -2,19 +2,22 @@ name: Store version artifacts
 
 on:
   workflow_call:
-    inputs:
-      branch:
-        type: string
-        description: 'Branch to build a package from'
-    branches:
-      - master
-      - stable25
-      - stable26
+
   workflow_dispatch:
     inputs:
-      branch:
-        description: 'Branch to build a package from'
+      increment:
+        description: 'Release increment'
         required: true
+        type: number
+      branch:
+        type: choice
+        description: Branch to build a package from
+        options: 
+          - main
+          - stable25
+          - stable26
+          - stable27
+        default: main
 
 jobs:
   combine-versions:
