@@ -2,7 +2,7 @@ name: Trigger GitLab Image Pipeline
 
 on:
   schedule:
-    - cron: "12 15 * * *"
+    - cron: "05 15 * * *"
   
   workflow_run:
     workflows: ["Store version artifacts"]
