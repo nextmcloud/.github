@@ -27,9 +27,7 @@ jobs:
           if [ "$TARGET_TRUNK" = "master" ]; then
             echo "::set-output name=VERSION::$VERSION"
           else
-              echo ::notice::"BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}'"
-              echo "** BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_26 }}' **" >> $GITHUB_STEP_SUMMARY
-              echo ::output name=buildtype::stable
+            
           fi
 
           env:
