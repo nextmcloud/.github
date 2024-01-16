@@ -24,8 +24,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-      with:
-        ref: ${{ github.event.workflow_run.head_branch || 'stable25' || 'master' }}
 
     - name: Get Workflow run ID
       id: get-workflow-run-id
