@@ -10,8 +10,6 @@ on:
     workflows: ["Store version artifacts"]
     types:
       - completed
-  
-  workflow_dispatch: #manual
 
 jobs:
   
