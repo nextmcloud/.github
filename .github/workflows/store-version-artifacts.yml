@@ -48,30 +48,35 @@ jobs:
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcprovisioning/releases/latest | jq -r '.tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of nmcprovisioning is $VERSION"
 
       - name: Get version of user_oidc
         id: retrieve-user_oidc
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/user_oidc/releases/latest | jq -r '.tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of user_oidc is $VERSION"
 
       - name: Get version of nmctheme
         id: retrieve-nmctheme
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmctheme/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of nmctheme is $VERSION"
 
       - name: Get version of nmcsharing
         id: retrieve-nmcsharing
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsharing/releases/latest | jq -r '.tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of nmcsharing is $VERSION"
 
       - name: Get version of nmcsettings
         id: retrieve-nmcsettings
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsettings/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of nmcsettings is $VERSION"
 
       - name: Create and set version-store directory
         run: |
