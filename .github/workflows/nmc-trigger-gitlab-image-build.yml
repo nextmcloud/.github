@@ -1,3 +1,7 @@
+# TODO:
+# make sure that upon scheduled workflow call 
+# the right branch of Store version artifacts is called
+
 name: Trigger GitLab Image Pipeline
 
 on:

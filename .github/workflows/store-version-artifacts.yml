@@ -1,3 +1,8 @@
+# TODO:
+# refactor app naming conventions to store version indicator
+# of what stable version it belongs to e.g. nmcprovisioning-25-99
+
+
 name: Store version artifacts
 
 on:
