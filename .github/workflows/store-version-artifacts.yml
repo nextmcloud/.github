@@ -20,7 +20,7 @@ on:
           - stable25
           - stable26
           - stable27
-        default: main
+        default: stable25
 
 jobs:
   combine-versions:
