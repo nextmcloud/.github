@@ -27,13 +27,15 @@ jobs:
         id: retrieve-server
         run: |
           TAG_NAMES=($(curl -s https://api.github.com/repos/nextmcloud/server/releases | jq -r '.[].tag_name'))
-      
+          
           for VERSION in "${TAG_NAMES[@]}"; do
-            if [[] "$VERSION" == stable25-37 ]]; then
+            if [[ "$VERSION" == stable25-* ]]; then
               echo "::set-output name=VERSION::$VERSION"
+              echo "$VERSION"
               break  # Exit the loop once a match is found
             fi
           done
+      
 
       - name: Get version of nmcprovisioning
         id: retrieve-nmcprovisioning
