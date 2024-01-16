@@ -33,7 +33,7 @@ jobs:
       - name: Get version of server
         id: retrieve-server
         run: |
-          TAG_NAMES=($(curl -s https://api.github.com/repos/nextmcloud/server/releases | jq -r '.[].tag_name'))
+          TAG_NAMES=$(curl -s https://api.github.com/repos/nextmcloud/server/releases | jq -r '.[].tag_name')
           
           for VERSION in "${TAG_NAMES[@]}"; do
             if [[ "$VERSION" == ${{ inputs.branch }}-* ]]; then
