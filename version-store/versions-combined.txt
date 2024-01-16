@@ -1,0 +1,1 @@
+-F "versions[NC_DEFAULT_TAG]=stable26-99" -F "versions[nmcprovisioning]=nmc1.0.0-nmc-106" -F "versions[user_oidc]=nmc1.2.6-rc1-2" -F "versions[nmctheme]=nmc0.1.0-110" -F "versions[nmcsharing]=nmc01.00.01" -F "versions[nmcsettings]=nmc0.0.1-43" \
