@@ -7,7 +7,7 @@ name: Store version artifacts
 
 on:
   schedule:
-    - cron: "20 09 * * *"
+    - cron: "32 10 * * CET"
 
   workflow_call:
     inputs:
@@ -34,6 +34,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Check the current time zone
+        run: echo $TZ
 
       - name: Get version of server
         id: retrieve-server

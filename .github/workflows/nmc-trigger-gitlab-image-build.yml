@@ -6,7 +6,7 @@ name: Trigger GitLab Image Pipeline
 
 on:
   schedule:
-    - cron: "20 09 * * *"
+    - cron: "32 10 * * CET"
 
   workflow_call:
     
@@ -28,6 +28,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Check the current time zone
+      run: echo $TZ
 
     - name: Get Workflow run ID
       id: get-workflow-run-id
