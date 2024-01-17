@@ -37,7 +37,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Check the current time zone
-        run: echo $TZ
+        run: date +'%:z %Z'
 
       - name: Get version of server
         id: retrieve-server

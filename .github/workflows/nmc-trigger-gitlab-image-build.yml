@@ -27,14 +27,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
 
     - name: Checkout code
       uses: actions/checkout@v2
 
     - name: Check the current time zone
-      run: echo $TZ
+      run: echo date +'%:z %Z'
 
     - name: Get Workflow run ID
       id: get-workflow-run-id
