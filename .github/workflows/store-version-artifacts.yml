@@ -7,7 +7,7 @@ name: Store version artifacts
 
 on:
   schedule:
-    - cron: "32 10 * * CET"
+    - cron: "10 35 * * CET"  
 
   workflow_call:
     inputs:
