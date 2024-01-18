@@ -72,7 +72,7 @@ jobs:
       - name: Get version of nmcsharing
         id: retrieve-nmcsharing
         run: |
-          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsharing/releases/latest | jq -r '.tag_name')
+          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsharing/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
           echo "Latest ${{ inputs.branch }} version of nmcsharing is $VERSION"
 
