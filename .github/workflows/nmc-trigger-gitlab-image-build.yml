@@ -2,46 +2,117 @@ name: Trigger GitLab Image Pipeline
 
 on:
   schedule:
-    - cron: "30 10 * * *"
+    - cron: "00 11,15 * * *"
 
   workflow_call:
     
   workflow_dispatch:
+  
+  workflow_run:
+    workflows: ["Store version artifacts"]
+    types:
+      - completed
 
 jobs:
-  trigger-pipeline:
+  store-version:
+      uses: nextmcloud/.github/.github/workflows/nmc-store-version-artifacts.yml@master
+
+  trigger-build-pipeline:
     runs-on: ubuntu-latest
 
     steps:
+
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Get Latest Artifact ID
-      id: get-artifact-id
+    - name: Check the current time zone
+      run: echo date +'%:z %Z'
+
+    - name: Get Workflow run ID
+      id: get-workflow-run-id
       run: |
-        ARTIFACT_ID=$(curl -s "https://api.github.com/repos/nextmcloud/server/actions/workflows" | jq -r '.workflows[0].id')
-        echo "::set-output name=artifact_id::$ARTIFACT_ID"
+        # Fetch workflows
+        WORKFLOW_NAME="Store version artifacts"
+        WORKFLOW_RUN_ID=$(curl -s "https://api.github.com/repos/nextmcloud/.github/actions/runs" | jq -r --arg WORKFLOW_NAME "$WORKFLOW_NAME" '.workflow_runs[] | select(.name == $WORKFLOW_NAME) | .id')
+        echo "Workflow Run ID: $WORKFLOW_RUN_ID"
+        echo "::set-output name=workflow_run_id::$WORKFLOW_RUN_ID"
 
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_RUN_ID: $WORKFLOW_RUN_ID
 
-    - name: Download versions artifact
+    - name: Get Artifact ID
+      id: get-artifact-id
       run: |
-        curl -O -L -J -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/nextmcloud/.github/actions/artifacts/${{ steps.get-artifact-id.outputs.artifact_id }}/zip"
-        
-        unzip versions-combined.zip
-      # Replace username/repo and ARTIFACT_ID with your repository and artifact details
+        # Get the latest artifact ID
+        ARTIFACT_ID=$(curl -s "https://api.github.com/repos/nextmcloud/.github/actions/runs/$WORKFLOW_RUN_ID/artifacts" | jq -r '.artifacts[0].id')
+        echo "GitHub Actions workspace: ${{ github.workspace }}"
+        echo "Artifact ID: $ARTIFACT_ID"
+        echo "::set-output name=artifact_id::$ARTIFACT_ID"
 
-    - name: Trigger Nmc deployment image building with versions
+        # Construct Artifact URL
+        ARTIFACT_URL="https://api.github.com/repos/nextmcloud/.github/actions/artifacts/$ARTIFACT_ID"
+        echo "::set-output name=artifact_url::$ARTIFACT_URL"
+        echo "Artifact URL: $ARTIFACT_URL"
+
+        # Construct Download URL
+        set -x
+        DOWNLOAD_URL=$(curl -s "$ARTIFACT_URL" | jq -r '.archive_download_url')
+        set +x
+        echo "::set-output name=download_url::$DOWNLOAD_URL"
+        echo "Download URL: $DOWNLOAD_URL"
+
+        # Confirm File name
+        FILENAME=$(curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/nextmcloud/actions/runs/$WORKFLOW_RUN_ID/artifacts/$ARTIFACT_ID/zip" \
+          -w '%{filename_effective}')
+        echo "::set-output name=filename::$FILENAME"
+        echo "File name is: $FILENAME"
       env:
-        GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
+          ARTIFACT_ID: $ARTIFACT_ID
+          ARTIFACT_URL: $ARTIFACT_URL
+          DOWNLOAD_URL: $DOWNLOAD_URL
+          FILENAME: $FILENAME
+
+    - name: Download and extract versions artifact
+      id: download-artifact
       run: |
-        VERSIONS=$(cat versions-combined.txt)
+        curl -LJO -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+        "$DOWNLOAD_URL"
+        echo "Downloaded file: $FILENAME"
+
+        # List workspace contents
+        echo "List directory"
+        ls -a "${{ github.workspace }}"
+
+        # Extract artifact
+        unzip "${{ github.workspace }}/versions-combined.zip"
+
+        # Re-list workspace contents
+        echo "List directory"
+        ls -a "${{ github.workspace }}"
+
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_RUN_ID: ${{ steps.get-workflow-run-id.outputs.workflow_run_id }}
+          ARTIFACT_ID: ${{ steps.get-artifact-id.outputs.artifact_id }}
+          ARTIFACT_URL: ${{ steps.get-artifact-id.outputs.artifact_url }}
+          DOWNLOAD_URL: ${{ steps.get-artifact-id.outputs.download_url }}
+          FILENAME: ${{ steps.get-artifact-id.outputs.filename }}
+      
+    - name: Trigger Nmc deployment image building with versions
+      run: |
+        # Read the versions from the file
+        VERSIONS=$(cat "${{ github.workspace }}/versions-combined.txt")
         
+        # Trigger the GitLab pipeline with versions
         curl -X POST \
           --fail \
-          -F token=$GITLAB_TOKEN \
+          -F token=glptt-8a48a4482a148e34106cc1ebf5bf30eebd796db0 \
           -F ref=master \
-          -F variables[VERSIONS]="$VERSIONS" \
+          "$VERSIONS" \
           https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline
+      env:
+        GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
