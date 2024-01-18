@@ -2,8 +2,8 @@ name: Trigger GitLab Image Pipeline
 
 on:
   schedule:
-    - cron: "00 9,15 * * *"
-    
+    - cron: "00 11,15 * * *"
+
   workflow_call:
     
   workflow_dispatch:
