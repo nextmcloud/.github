@@ -1,12 +1,11 @@
-# TODO:
-# make sure that upon scheduled workflow call 
-# the right branch of Store version artifacts is called
-
 name: Trigger GitLab Image Pipeline
 
 on:
   schedule:
-    - cron: "12 14 * * *"
+    - cron: "00 9,15 * * *"
+
+  repository_dispatch:
+    types: [trigger-from-app]
     
   workflow_call:
     
@@ -18,11 +17,10 @@ on:
       - completed
 
 jobs:
-  
   store-version:
-      uses: nextmcloud/.github/.github/workflows/store-version-artifacts.yml@nmc/2027-build-test-rtoth
+      uses: nextmcloud/.github/.github/workflows/nmc-store-version-artifacts.yml@nmc/2027-build-test-rtoth
 
-  trigger-pipeline:
+  trigger-build-pipeline:
     runs-on: ubuntu-latest
 
     steps:

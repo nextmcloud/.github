@@ -1,18 +1,29 @@
+# TODO:
+# refactor app naming conventions to store version indicator
+# of what stable version it belongs to e.g. nmcprovisioning-25-99
+
+
 name: Store version artifacts
 
 on:
-  schedule:
-    - cron: "0 15 * * *"
-    
   workflow_call:
     inputs:
-      branch:
+      branch: 
         type: string
-        description: 'Branch to build a package from'
+        description: 'Source of workflow'
+
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to build a package from'
+        type: choice
+        description: 'Source of stable versions'
+        options: 
+          - main
+          - stable25
+          - stable26
+          - stable27
+        default: stable25
+
 jobs:
   combine-versions:
     runs-on: ubuntu-latest
@@ -21,43 +32,56 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Check the current time zone
+        run: date +'%:z %Z'
+
       - name: Get version of server
         id: retrieve-server
         run: |
-          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/server/releases | jq -r '.[].tag_name')
-          if [ "$TARGET_TRUNK" = "master" ]; then
-            echo "::set-output name=VERSION::$VERSION"
-          else
-            
-          fi
+          TAG_NAMES=($(curl -s https://api.github.com/repos/nextmcloud/server/releases | jq -r '.[].tag_name'))
+          
+          for VERSION in "${TAG_NAMES[@]}"; do
+            if [[ "$VERSION" == ${{ inputs.branch }}-* ]]; then
+              echo "::set-output name=VERSION::$VERSION"
+              echo "Latest ${{ inputs.branch }} is of $VERSION"
+              break  # Exit the loop once a match is found
+            fi
+          done
 
       - name: Get version of nmcprovisioning
         id: retrieve-nmcprovisioning
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcprovisioning/releases/latest | jq -r '.tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of nmcprovisioning is $VERSION"
 
       - name: Get version of user_oidc
         id: retrieve-user_oidc
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/user_oidc/releases/latest | jq -r '.tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of user_oidc is $VERSION"
 
       - name: Get version of nmctheme
         id: retrieve-nmctheme
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmctheme/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of nmctheme is $VERSION"
+
       - name: Get version of nmcsharing
         id: retrieve-nmcsharing
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsharing/releases/latest | jq -r '.tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of nmcsharing is $VERSION"
+
       - name: Get version of nmcsettings
         id: retrieve-nmcsettings
         run: |
           VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcsettings/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
+          echo "Latest ${{ inputs.branch }} version of nmcsettings is $VERSION"
 
       - name: Create and set version-store directory
         run: |
