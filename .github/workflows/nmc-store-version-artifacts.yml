@@ -117,7 +117,7 @@ jobs:
           echo "-F variables[nmctheme]=${{ steps.retrieve-nmctheme.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
           echo "-F variables[nmcsharing]=${{ steps.retrieve-nmcsharing.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
           echo "-F variables[nmcsettings]=${{ steps.retrieve-nmcsettings.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
-          echo "-F variables[BUILD_APP_IMAGE]=true >> ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "-F variables[BUILD_APP_IMAGE]=true" >> ${{ github.workspace }}/version-store/versions-combined.txt
                
       - name: Upload combined version artifacts
         uses: actions/upload-artifact@v2
