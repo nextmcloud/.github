@@ -111,7 +111,7 @@ jobs:
         curl -X POST \
           --fail \
           -F token=glptt-8a48a4482a148e34106cc1ebf5bf30eebd796db0 \
-          -F ref=master \
+          -F ref=nmc/refactor-gitlab-ci \
           "$VERSIONS" \
           https://gitlab.devops.telekom.de/api/v4/projects/37742/trigger/pipeline
       env:
