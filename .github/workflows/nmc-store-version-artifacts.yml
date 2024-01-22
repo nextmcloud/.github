@@ -51,14 +51,14 @@ jobs:
       - name: Get version of nmcprovisioning
         id: retrieve-nmcprovisioning
         run: |
-          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcprovisioning/releases/latest | jq -r '.tag_name')
+          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/nmcprovisioning/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
           echo "Latest ${{ inputs.branch }} version of nmcprovisioning is $VERSION"
 
       - name: Get version of user_oidc
         id: retrieve-user_oidc
         run: |
-          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/user_oidc/releases/latest | jq -r '.tag_name')
+          VERSION=$(curl -s https://api.github.com/repos/nextmcloud/user_oidc/releases | jq -r 'map(select(.prerelease)) | .[0].tag_name')
           echo "::set-output name=VERSION::$VERSION"
           echo "Latest ${{ inputs.branch }} version of user_oidc is $VERSION"
 
