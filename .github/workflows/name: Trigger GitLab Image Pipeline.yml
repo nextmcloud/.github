@@ -115,7 +115,7 @@ jobs:
         )
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
-        echo "NEW_CONTENT"
+        echo "$NEW_CONTENT"
         echo "$FILE_PATH"
 
         curl -X PUT \
