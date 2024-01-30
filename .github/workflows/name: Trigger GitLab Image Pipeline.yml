@@ -111,11 +111,7 @@ jobs:
         PKR_VAR_NC_TAG=$(echo "$VARIABLES" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
               
         # Construct the updated .gitlab-ci.yml content
-        NEW_CONTENT=$(cat <<EOF
-        variables:
-          PKR_VAR_NC_TAG: "$PKR_VAR_NC_TAG"
-        EOF
-        )
+        NEW_CONTENT="variables:\n  PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\""
         
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
