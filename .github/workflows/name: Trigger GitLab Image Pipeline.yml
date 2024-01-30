@@ -107,7 +107,7 @@ jobs:
         # Read the versions from the file
         #VERSIONS=$(cat "${{ github.workspace }}/versions-combined.txt")
 
-        NEW_CONTENT=$(cat <<EOF
+        NEW_CONTENT=$(cat <<-EOF
         variables:
           PKR_VAR_NC_TAG: "stable26-99"
         EOF
@@ -129,8 +129,7 @@ jobs:
             \"content\": \"$(echo "$NEW_CONTENT" | base64)\",
             \"commit_message\": \"Update .gitlab-ci.yml\"
           }" \
-          "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"      
-    
+          "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"   
       env:
         GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
         CI_PROJECT_ID: 21527
