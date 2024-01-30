@@ -107,22 +107,31 @@ jobs:
         # Read the versions from the file
         VERSIONS=$(cat "${{ github.workspace }}/versions-combined.txt")
 
+        # Extract the value of PKR_VAR_NC_TAG from VARIABLES
         PKR_VAR_NC_TAG=$(echo "$VARIABLES" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
-
+              
+        # Construct the updated .gitlab-ci.yml content
+        NEW_CONTENT=$(cat <<EOF
+        variables:
+          PKR_VAR_NC_TAG: "$PKR_VAR_NC_TAG"
+        EOF
+        )
+        
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
         echo "$NEW_CONTENT"
         echo "$FILE_PATH"
-
+        
+        # Encode the entire content with base64 and update the file
         curl -X PUT \
           -H "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{
             \"branch\": \"master\",
-            \"content\": \"$(echo "$PKR_VAR_NC_TAG" | base64)\",
+            \"content\": \"$(echo "$NEW_CONTENT" | base64)\",
             \"commit_message\": \"Update .gitlab-ci.yml\"
           }" \
-          "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"   
+          "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"
       env:
         GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
         CI_PROJECT_ID: 21527
