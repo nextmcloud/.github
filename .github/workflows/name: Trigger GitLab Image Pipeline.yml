@@ -108,11 +108,14 @@ jobs:
         #VERSIONS=$(cat "${{ github.workspace }}/versions-combined.txt")
 
         NEW_CONTENT=$(cat <<EOF
-  
-        variables:
-          PKR_VAR_NC_TAG: "stable26-99"
+          variables:
+            PKR_VAR_NC_TAG: "stable26-99"
         EOF
         )
+          
+        # Perform in-place substitution using sed
+        sed -i '/PKR_VAR_NC_TAG/c\'"$NEW_CONTENT" .gitlab-ci.yml
+        
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
         echo "$NEW_CONTENT"
