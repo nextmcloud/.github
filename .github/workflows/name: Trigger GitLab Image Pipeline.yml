@@ -110,7 +110,7 @@ jobs:
         NEW_CONTENT=$(cat <<EOF
 
         variables:
-          PKR_VAR_NC_TAG: "new_value"  # Update this line with the new value
+          PKR_VAR_NC_TAG: "stable26-99"
         EOF
         )
         
