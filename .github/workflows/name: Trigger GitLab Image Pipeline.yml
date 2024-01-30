@@ -110,21 +110,23 @@ jobs:
         # Extract the value of PKR_VAR_NC_TAG from VARIABLES
         PKR_VAR_NC_TAG=$(echo "$VARIABLES" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
               
-        # Construct the updated .gitlab-ci.yml content
-        NEW_CONTENT="variables:\n  PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\""
-        
+        # Read the existing .gitlab-ci.yml content
+        EXISTING_CONTENT=$(curl -H "PRIVATE-TOKEN: $CI_JOB_TOKEN" "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH/raw?ref=master")
+
+        # Perform substitution to update the value of PKR_VAR_NC_TAG
+        NEW_CONTENT=$(echo "$EXISTING_CONTENT" | sed -i "s/PKR_VAR_NC_TAG: .*/PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\"/")
+
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
-        echo "$NEW_CONTENT"
-        echo "$FILE_PATH"
-        
+        echo -e "$NEW_CONTENT"  # Use echo -e to interpret escape sequences
+
         # Encode the entire content with base64 and update the file
         curl -X PUT \
           -H "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{
             \"branch\": \"master\",
-            \"content\": \"$(echo "$NEW_CONTENT" | base64)\",
+            \"content\": \"$(echo -e "$NEW_CONTENT" | base64)\",
             \"commit_message\": \"Update .gitlab-ci.yml\"
           }" \
           "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"
