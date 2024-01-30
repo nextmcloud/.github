@@ -119,7 +119,7 @@ jobs:
           -H "Content-Type: application/json" \
           -d "{
             \"branch\": \"master\",
-            \"content\": \"$(echo "PKR_VAR_NC_TAG" | base64)\",
+            \"content\": \"$(echo "$PKR_VAR_NC_TAG" | base64)\",
             \"commit_message\": \"Update .gitlab-ci.yml\"
           }" \
           "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"   
