@@ -105,28 +105,21 @@ jobs:
     - name: Trigger Nmc deployment image building with versions
       run: |
         # Read the versions from the file
-        #VERSIONS=$(cat "${{ github.workspace }}/versions-combined.txt")
+        VERSIONS=$(cat "${{ github.workspace }}/versions-combined.txt")
 
-        NEW_CONTENT=$(cat <<-EOF
-        variables:
-          PKR_VAR_NC_TAG: "stable26-99"
-        EOF
-        )
-            
-        # Perform in-place substitution using sed
-        sed -i "s|PKR_VAR_NC_TAG:.*|$NEW_CONTENT|" .gitlab-ci.yml
-            
+        PKR_VAR_NC_TAG=$(echo "$VARIABLES" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
+
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
         echo "$NEW_CONTENT"
         echo "$FILE_PATH"
-            
+
         curl -X PUT \
           -H "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{
             \"branch\": \"master\",
-            \"content\": \"$(echo "$NEW_CONTENT" | base64)\",
+            \"content\": \"$(echo "PKR_VAR_NC_TAG" | base64)\",
             \"commit_message\": \"Update .gitlab-ci.yml\"
           }" \
           "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"   
