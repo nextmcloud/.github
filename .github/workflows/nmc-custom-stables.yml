@@ -1,0 +1,197 @@
+###
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Author: Bernd rederlechner <bernd.rederlechner@t-systems.com
+#
+# Take the current state of the customisation pullrequests and
+# create a copy of stable branches and PR. The stable branches
+# are used as bugfixing baesline, but not as "second development
+# stream"
+#
+# The procedure succeeds for a PR under the following conditions:
+# - The source PR is marked with labels: custom, build-ready
+# - The customisation branch is equal or newer than the stableXX Nextcloud
+#   upstream commit
+# - the branch is automatically merging to stableXX on creation
+#   (this means the start state of the copied stable branch 
+#    must be also a WORKING commit within the trunk customisation branch)     
+# 
+#  You can run the script multiple times until all stable branches are available
+#
+# Test call: act --container-architecture linux/amd64 --secret-file ../secrets.env --env-file ../nmc-master-build.env -j build-custom-stable
+
+name: MCLOUD stable baseline
+
+on:
+  workflow_call:
+    inputs:
+      trunk:
+        description: trunk branch name for the repo (e.g., master, main, trunk, ...)
+        required: true
+        type: string
+      stable:
+        description: stable branch to create baseline PRs for 
+        required: false
+        type: string
+      
+
+jobs:
+  create-stables:
+    runs-on: ubuntu-latest
+    env:
+      CUSTOM_REPO:   ${{ github.repository }}
+      FETCH_DEPTH:   0
+      TARGET_TRUNK:  ${{ inputs.trunk }}
+      TARGET_STABLE: ${{ inputs.stable }}
+      BUILD_USER:    ${{ github.actor }}
+      BUILD_EMAIL:   ${{ github.actor }}@users.noreply.github.com
+      BUILD_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: "Find customisation copy candidates"
+        uses: octokit/graphql-action@v2.x
+        id: find_customisations
+        env:
+          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
+        with:
+          query: |
+            query findCustomisations($searchexpr: String!) {
+              search(query: $searchexpr, type: ISSUE, first: 500) {
+                edges {
+                  node {
+                    ... on PullRequest {
+                      state
+                      number
+                      title
+                      baseRefName
+                      headRefName
+                      mergeable
+                      isDraft
+                      url
+                      description
+                    }
+                  }
+                }
+              }
+            }
+          searchexpr: "type:pr state:open repo:${{ env.CUSTOM_REPO }} base:${{ env.TARGET_TRUNK }} label:custom label:approved label:test"
+          # searchexpr: "type:pr state:open repo:${{ env.CUSTOM_REPO }} base:${{ env.TARGET_TRUNK }} base:${{ env.TARGET_STABLE }} label:custom label:build-ready"
+          # note that the search has OR semantice for `base:`, but AND semantics for `label:` !
+          # see: https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests#search-by-label      
+
+      - name: Checkout build repo
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.CUSTOM_REPO }}
+          ref: ${{ env.TARGET_STABLE }}
+          fetch-depth: ${{ env.FETCH_DEPTH }}
+          token: ${{ env.BUILD_TOKEN }}
+      
+      - name: Prepare repo for modifications
+        id: prepare_repo
+        run: |
+          # some settings are mandatory for commits
+          git config user.name $BUILD_USER
+          git config user.email $BUILD_EMAIL
+        
+          #avoid some spoiling warnings
+          git config merge.verbosity 1
+          git config advice.skippedCherryPicks false          
+
+
+      - name: Create missing stables
+        id: copy_branches
+        run: |
+            pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
+            for pr in $(echo "${pulls}" | jq -c '.[]'); do
+                prnr=$(echo "$pr" | jq -r '.number')
+
+                prbranch=$(echo "$pr" | jq -r '.headRefName')
+                stablebranch="${{ env.TARGET_STABLE }}"
+                copybranch="backport/nmc/${prnr}/${stablebranch}"
+                
+                # Check if the new branch already exists
+                if git ls-remote --heads origin ${copybranch} | grep -q ${copybranch}; then
+                  echo "::info:: Skip copy for ${copybranch}, try use existing"
+                  continue
+                fi
+
+                # copy and rebase
+                git checkout $prbranch
+                git branch --copy $branch $copybranch
+
+                git checkout $stablebranch
+                git rebase --merge --onto $stablebranch --fork-point $stable $copybranch
+                result=$?
+                if [ ! $result = 0 ]; then
+                    git push origin $copybranch
+                    echo ":white_check_mark: ${branch} -> ${copybranch} created!" >> $GITHUB_STEP_SUMMARY
+                else
+                    echo ::error::"REBASE conflicts: ${copybranch} from ${prbranch}!"
+                    git diff --diff-filter=U
+                    echo ":no_entry_sign: ${copybranch} from ${prbranch} does not merge (skipped)!" >> $GITHUB_STEP_SUMMARY
+                    git rebase --abort
+                    git checkout $stablebranch
+                    git branch -D $copybranch
+                fi
+            done
+
+        ###
+        # after copying the branches to stable, create PRs for the successful ones 
+      - name: "Find existing stable PR"
+        uses: octokit/graphql-action@v2.x
+        id: find_backport_pr
+        env:
+          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
+        with:
+          query: |
+              query findStables($searchexpr: String!) {
+                search(query: $searchexpr, type: ISSUE, first: 500) {
+                  edges {
+                    node {
+                      ... on PullRequest {
+                        baseRefName
+                        headRefName
+                      }
+                    }
+                  }
+                }
+              }
+          searchexpr: "type:pr state:open repo:${{ env.CUSTOM_REPO }} base:${{ env.TARGET_STABLE }} label:test label:custom label:approved"    
+          # searchexpr: "type:pr state:open repo:${{ env.CUSTOM_REPO }} base:${{ env.TARGET_STABLE }} label:test label:custom label:approved"    
+
+      - name: Create missing stables
+        id: stable_prs
+        run: |
+            pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
+            stablepulls=$(echo '${{ steps.find_backport_pr.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
+            for pr in $(echo "${pulls}" | jq -c '.[]'); do
+                title=$(echo "$pr" | jq -r '.title')
+                prnr=$(echo "$pr" | jq -r '.number')
+                description=$(echo "$pr" | jq -r '.description')
+                url=$(echo "$pr" | jq -r '.url')
+
+                prbranch=$(echo "$pr" | jq -r '.headRefName')
+                stablebranch="${{ env.TARGET_STABLE }}"
+                copybranch="backport/nmc/${prnr}/${stablebranch}"
+                
+                # skip if PR already exists
+                if $(echo "$stablepulls" | jq --arg st "${stablebranch}" --arg bp "${copybranch}" '.[] | select(.baseRefName == $st and .headRefName == $bp)'; then
+                    echo "::info:: Existing PR for ${copybranch}, skip PR creation"
+                    continue
+                fi                  
+
+                # skip if no backport branch is available
+                if [ ! $(git ls-remote --heads origin ${copybranch} | grep -q ${copybranch}) ]; then
+                    echo "::info:: No ${copybranch}, skip PR creation"
+                    continue
+                fi                  
+
+                stableprtitle="["${stablebranch}"] "${title}
+                stableprdescription="__Stable baseline for ${url}__ ${description}"
+
+                gh pr create --title "${stableprtitle}" --body "${stableprdescription}" \
+                    --base "${stablebranch}" --head "${copybranch}"" --label test
+                # --label custom 
+            done
+  
