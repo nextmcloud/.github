@@ -114,7 +114,7 @@ jobs:
         )
           
         # Perform in-place substitution using sed
-        sed -i '/PKR_VAR_NC_TAG/c\'"$NEW_CONTENT" .gitlab-ci.yml
+        sed -i '/PKR_VAR_NC_TAG:/c\'"$NEW_CONTENT" .gitlab-ci.yml
         
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
