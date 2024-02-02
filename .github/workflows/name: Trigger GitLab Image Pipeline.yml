@@ -111,24 +111,27 @@ jobs:
         PKR_VAR_NC_TAG=$(echo "$VARIABLES" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
 
         # Read the source .gitlab-ci.yml content
-        EXISTING_CONTENT=$(curl -H "PRIVATE-TOKEN: $CI_JOB_TOKEN" "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH/raw?ref=master")
+        EXISTING_CONTENT=$(curl -H "PRIVATE-TOKEN: $PRIVATE_TOKEN" "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH/raw?ref=master")
         
         # Perform substitution to update the value of PKR_VAR_NC_TAG
         NEW_CONTENT=$(echo "$EXISTING_CONTENT" | sed "s/PKR_VAR_NC_TAG: .*/PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\"/")
         
         echo -e "$NEW_CONTENT" > .gitlab-ci.yml
         cat ./.gitlab-ci.yml
-        echo "$GITLAB_API"
-        echo "$CI_PROJECT_ID"
-        echo -e "$NEW_CONTENT"  # Use echo -e to interpret escape sequences
-        
+        echo "GITLAB_API: $GITLAB_API"
+        echo "CI_PROJECT_ID: $CI_PROJECT_ID"
+        echo -e "NEW_CONTENT: $NEW_CONTENT"  # Use echo -e to interpret escape sequences
+        echo "PRIVATE_TOKEN: $PRIVATE_TOKEN"
+
         curl -X PUT \
-          -H "PRIVATE-TOKEN: TTtzEVuC5CuA1-aAJdBq" \
+          -H "PRIVATE-TOKEN: $PRIVATE_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{"branch": "master", "content": "'$(base64 < .gitlab-ci.yml)'", "commit_message": "Update .gitlab-ci.yml"}' \
           "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"
       env:
-        GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
         CI_PROJECT_ID: 21527
         GITLAB_API: https://gitlab.devops.telekom.de/api/v4
         FILE_PATH: .gitlab-ci.yml
+        PRIVATE_TOKEN: "TTtzEVuC5CuA1-aAJdBq"
+
+        
