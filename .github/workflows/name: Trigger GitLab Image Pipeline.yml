@@ -117,8 +117,8 @@ jobs:
         NEW_CONTENT=$(echo "$EXISTING_CONTENT" | sed "s/PKR_VAR_NC_TAG: .*/PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\"/")
         
         # Save the updated var to a temp file
-        echo -e "$NEW_CONTENT" > temp_file.tmp
-        cat "$(pwd)/temp_file.tmp"
+        echo -e "$NEW_CONTENT" > .gitlab-ci.yml
+        cat ./.gitlab-ci.yml
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
         echo -e "$NEW_CONTENT"  # Use echo -e to interpret escape sequences
@@ -129,9 +129,6 @@ jobs:
           -d '{"branch": "master", "content": "'$(base64 < temp_file.tmp)'", "commit_message": "Update .gitlab-ci.yml"}' \
           "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"
 
-        
-        # Remove the temp file
-        rm temp_file.tmp
       env:
         GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
         CI_PROJECT_ID: 21527
