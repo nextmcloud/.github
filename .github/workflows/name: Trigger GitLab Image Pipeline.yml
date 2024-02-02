@@ -111,12 +111,12 @@ jobs:
         PKR_VAR_NC_TAG=$(echo "$VARIABLES" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
 
         # Read the source .gitlab-ci.yml content
-        EXISTING_CONTENT=$(curl -H "PRIVATE-TOKEN: $PRIVATE_TOKEN" "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH/raw?ref=master" | base64 --wrap=0)
+        EXISTING_CONTENT=$(curl -H "PRIVATE-TOKEN: $PRIVATE_TOKEN" "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH/raw?ref=master")
         
         echo "EXISTING_CONTENT: $EXISTING_CONTENT"
 
         # Perform substitution to update the value of PKR_VAR_NC_TAG
-        NEW_CONTENT=$(echo "$EXISTING_CONTENT" | sed "s/PKR_VAR_NC_TAG: .*/PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\"/")
+        NEW_CONTENT=$(echo "$EXISTING_CONTENT" | sed "s/PKR_VAR_NC_TAG: .*/PKR_VAR_NC_TAG: "$PKR_VAR_NC_TAG"/")
 
         echo "NEW_CONTENT: $NEW_CONTENT"
 
