@@ -118,7 +118,7 @@ jobs:
         
         # Save the updated var to a temp file
         echo -e "$NEW_CONTENT" > temp_file.tmp
-        echo "$(pwd)"
+        cat "$(pwd)"/temp_file.tmp
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
         echo -e "$NEW_CONTENT"  # Use echo -e to interpret escape sequences
