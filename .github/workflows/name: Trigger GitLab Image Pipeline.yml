@@ -116,7 +116,6 @@ jobs:
         # Perform substitution to update the value of PKR_VAR_NC_TAG
         NEW_CONTENT=$(echo "$EXISTING_CONTENT" | sed "s/PKR_VAR_NC_TAG: .*/PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\"/")
         
-        # Save the updated var to a temp file
         echo -e "$NEW_CONTENT" > .gitlab-ci.yml
         cat ./.gitlab-ci.yml
         echo "$GITLAB_API"
@@ -128,7 +127,7 @@ jobs:
           -H "Content-Type: application/json" \
           -d '{"branch": "master", "content": "'$(base64 < .gitlab-ci.yml)'", "commit_message": "Update .gitlab-ci.yml"}' \
           "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"
-
+          "https://gitlab.devops.telekom.de/api/v4/projects/21527/repository/files/.gitlab-ci.yml"
       env:
         GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
         CI_PROJECT_ID: 21527
