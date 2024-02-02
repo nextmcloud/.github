@@ -104,32 +104,37 @@ jobs:
       
     - name: Trigger Nmc deployment image building with versions
       run: |
-        # Read the versions from the file
-        VERSIONS=$(cat "${{ github.workspace }}/versions-combined.txt")
+        # Read artifact into variable
+        VERSIONS=$(cat "/home/runner/work/.github/.github/versions-combined.txt")
 
-        # Extract the value of PKR_VAR_NC_TAG from VARIABLES
+        # TEST *** Extract the value of PKR_VAR_NC_TAG from VARIABLES
         PKR_VAR_NC_TAG=$(echo "$VARIABLES" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
-              
-        # Read the existing .gitlab-ci.yml content
+
+        # Read the source .gitlab-ci.yml content
         EXISTING_CONTENT=$(curl -H "PRIVATE-TOKEN: $CI_JOB_TOKEN" "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH/raw?ref=master")
-
+        
         # Perform substitution to update the value of PKR_VAR_NC_TAG
-        NEW_CONTENT=$(echo "$EXISTING_CONTENT" | sed -i "s/PKR_VAR_NC_TAG: .*/PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\"/")
-
+        NEW_CONTENT=$(echo "$EXISTING_CONTENT" | sed "s/PKR_VAR_NC_TAG: .*/PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\"/")
+        
+        # Save the updated var to a temp file
+        echo -e "$NEW_CONTENT" > temp_file.tmp
+        
         echo "$GITLAB_API"
         echo "$CI_PROJECT_ID"
         echo -e "$NEW_CONTENT"  # Use echo -e to interpret escape sequences
-
-        # Encode the entire content with base64 and update the file
+        
         curl -X PUT \
           -H "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{
             \"branch\": \"master\",
-            \"content\": \"$(echo -e "$NEW_CONTENT" | base64)\",
+            \"content\": \"$(base64 < temp_file.tmp)\",
             \"commit_message\": \"Update .gitlab-ci.yml\"
           }" \
           "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"
+        
+        # Remove the temp file
+        rm temp_file.tmp
       env:
         GITLAB_TOKEN: ${{ secrets.GITLAB_IMAGE_TRIGGER_TOKEN }}
         CI_PROJECT_ID: 21527
