@@ -132,7 +132,7 @@ jobs:
         curl -X PUT \
           -H "PRIVATE-TOKEN: $PRIVATE_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"branch": "master", "content": "'$(base64 < .gitlab-ci.yml)'", "commit_message": "Update .gitlab-ci.yml"}' \
+          -d '{"branch": "master", "content": "$B64_NEW_CONTENT", "commit_message": "Update .gitlab-ci.yml"}' \
           "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"
       env:
         CI_PROJECT_ID: 21527
