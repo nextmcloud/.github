@@ -120,7 +120,7 @@ jobs:
 
         echo "NEW_CONTENT: $NEW_CONTENT"
 
-        B64_NEW_CONTENT=("$NEW_CONTENT" | base64 --wrap=0)
+        B64_NEW_CONTENT=$(echo "$NEW_CONTENT" | base64 --wrap=0)
 
         echo "B64_NEW_CONTENT: $B64_NEW_CONTENT"
 
