@@ -120,7 +120,7 @@ jobs:
 
         echo "NEW_CONTENT: $NEW_CONTENT"
 
-        B64_NEW_CONTENT=$(echo "$NEW_CONTENT" | base64 --wrap=0)
+        URL_ENCODED_NEW_CONTENT=$(awk -v ORS='\\n' '1' "$NEW_CONTENT" )
 
         echo "B64_NEW_CONTENT: $B64_NEW_CONTENT"
 
@@ -132,12 +132,12 @@ jobs:
         curl -X PUT \
           -H "PRIVATE-TOKEN: $PRIVATE_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"branch": "master", "content": "base64 < '"$B64_NEW_CONTENT"'", "commit_message": "Update .gitlab-ci.yml"}' \
+          -d '{"branch": "master", "content": "'"$B64_NEW_CONTENT"'", "commit_message": "Update .gitlab-ci.yml"}' \
           "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH"
       env:
         CI_PROJECT_ID: 21527
         GITLAB_API: https://gitlab.devops.telekom.de/api/v4
         FILE_PATH: .gitlab-ci.yml
-        PRIVATE_TOKEN: "glpat-PrSAsHr_xCpth-KBDxhV"
+        PRIVATE_TOKEN: "**TOKEN PLACEHOLDER**"
 
         
