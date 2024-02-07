@@ -55,7 +55,7 @@ jobs:
         with:
           query: |
             query findCustomisations($searchexpr: String!) {
-              search(query: $searchexpr, type: ISSUE, first: 500) {
+              search(query: $searchexpr, type: ISSUE, first: 100) {
                 edges {
                   node {
                     ... on PullRequest {
@@ -145,7 +145,7 @@ jobs:
         with:
           query: |
               query findStables($searchexpr: String!) {
-                search(query: $searchexpr, type: ISSUE, first: 500) {
+                search(query: $searchexpr, type: ISSUE, first: 100) {
                   edges {
                     node {
                       ... on PullRequest {
