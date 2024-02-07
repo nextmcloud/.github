@@ -105,7 +105,6 @@ jobs:
             pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             for pr in $(echo "${pulls}" | jq -c '.[]'); do
                 prnr=$(echo "$pr" | jq -r '.number')
-
                 prbranch=$(echo "$pr" | jq -r '.headRefName')
                 stablebranch="${{ env.TARGET_STABLE }}"
                 copybranch="backport/nmc/${prnr}/${stablebranch}"
@@ -168,7 +167,7 @@ jobs:
             for pr in $(echo "${pulls}" | jq -c '.[]'); do
                 title=$(echo "$pr" | jq -r '.title')
                 prnr=$(echo "$pr" | jq -r '.number')
-                description=$(echo "$pr" | jq -r '.description')
+                body=$(echo "$pr" | jq -r '.body')
                 url=$(echo "$pr" | jq -r '.url')
 
                 prbranch=$(echo "$pr" | jq -r '.headRefName')
@@ -188,7 +187,7 @@ jobs:
                 fi                  
 
                 stableprtitle="["${stablebranch}"] "${title}
-                stableprdescription="__Stable baseline for ${url}__ ${description}"
+                stableprdescription="__Stable baseline for ${url}__ ${body}"
 
                 gh pr create --title "${stableprtitle}" --body "${stableprdescription}" \
                     --base "${stablebranch}" --head "${copybranch}"" --label test
