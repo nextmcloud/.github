@@ -102,7 +102,7 @@ jobs:
       - name: Create missing stables
         id: copy_branches
         run: |
-            pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
+            pulls=$(echo "${{ steps.find_customisations.outputs.data }}" | jq -s '.[].search.edges | map(.node)')
             for pr in $(echo "${pulls}" | jq -c '.[]'); do
                 prnr=$(echo "$pr" | jq -r '.number')
                 prbranch=$(echo "$pr" | jq -r '.headRefName')
@@ -162,14 +162,13 @@ jobs:
       - name: Create missing stables
         id: stable_prs
         run: |
-            pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
-            stablepulls=$(echo '${{ steps.find_backport_pr.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
+            pulls=$(echo "${{ steps.find_customisations.outputs.data }}" | jq -s '.[].search.edges | map(.node)')
+            stablepulls=$(echo "${{ steps.find_backport_pr.outputs.data }}" | jq -s '.[].search.edges | map(.node)')
             for pr in $(echo "${pulls}" | jq -c '.[]'); do
                 title=$(echo "$pr" | jq -r '.title')
                 prnr=$(echo "$pr" | jq -r '.number')
                 body=$(echo "$pr" | jq -r '.body')
                 url=$(echo "$pr" | jq -r '.url')
-
                 prbranch=$(echo "$pr" | jq -r '.headRefName')
                 stablebranch="${{ env.TARGET_STABLE }}"
                 copybranch="backport/nmc/${prnr}/${stablebranch}"
@@ -187,8 +186,10 @@ jobs:
                 fi                  
 
                 stableprtitle="["${stablebranch}"] "${title}
-                stableprdescription="__Stable baseline for ${url}__ ${body}"
-
+                stableprdescription=<<BODY
+            __${stablebranch} baseline for [#${prnr}](${url})__ 
+            ${body}
+            BODY
                 gh pr create --title "${stableprtitle}" --body "${stableprdescription}" \
                     --base "${stablebranch}" --head "${copybranch}"" --label test
                 # --label custom 
