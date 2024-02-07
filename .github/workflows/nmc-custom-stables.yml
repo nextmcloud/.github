@@ -102,7 +102,7 @@ jobs:
       - name: Create missing stables
         id: copy_branches
         run: |
-            pulls="$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')"
+            pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             for pr in $(echo "${pulls}" | jq -c '.[]'); do
                 prnr=$(echo "$pr" | jq -r '.number')
                 prbranch=$(echo "$pr" | jq -r '.headRefName')
@@ -111,7 +111,7 @@ jobs:
                 
                 # Check if the new branch already exists
                 if git ls-remote --heads origin ${copybranch} | grep -q ${copybranch}; then
-                  echo "::info:: Skip copy for ${copybranch}, try use existing"
+                  echo "::info:: Use existing ${copybranch}"
                   continue
                 fi
 
@@ -162,8 +162,8 @@ jobs:
       - name: Create missing stables
         id: stable_prs
         run: |
-            pulls="$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')"
-            stablepulls="$(echo '${{ steps.find_backport_pr.outputs.data }}' | jq -s '.[].search.edges | map(.node)')"
+            pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
+            stablepulls=$(echo '${{ steps.find_backport_pr.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             for pr in $(echo "${pulls}" | jq -c '.[]'); do
                 title=$(echo "$pr" | jq -r '.title')
                 prnr=$(echo "$pr" | jq -r '.number')
