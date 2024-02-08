@@ -163,6 +163,7 @@ jobs:
       - name: Create missing stables
         id: stable_prs
         run: |
+            pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             stablepulls=$(echo '${{ steps.find_backport_pr.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             while IFS= read -r pr; do
                 title=$(echo $pr | jq -r '.title')
@@ -188,7 +189,8 @@ jobs:
                 stableprtitle="[${stablebranch}] ${title}"
                 stableprdescription="__${stablebranch} baseline for [#${prnr}](${url})__\r\n${body}"
                 gh pr create --title "${stableprtitle}" --body "${stableprdescription}" \
-                    --base "${stablebranch}" --head "${copybranch}"" --label test
+                    --base "${stablebranch}" --head "${copybranch}" --label test
                 # --label custom 
-            done < <(echo '${{ steps.find_customisations.outputs.data }}' | jq -c -r '.[] | @json')
+            done < <(echo ${pulls} | jq -c -r '.[] | @json')
+
   
