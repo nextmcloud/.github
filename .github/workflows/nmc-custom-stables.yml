@@ -175,7 +175,7 @@ jobs:
                 copybranch="backport/nmc/${prnr}/${stablebranch}"
                 
                 # skip if PR already exists
-                if $(echo "$stablepulls" | jq --arg st "${stablebranch}" --arg bp "${copybranch}" '.[] | select(.baseRefName == $st and .headRefName == $bp)'); then
+                if [ -z $(echo "$stablepulls" | jq --arg st "${stablebranch}" --arg bp "${copybranch}" '.[] | select(.baseRefName == $st and .headRefName == $bp)') ]; then
                     echo "::info:: Existing PR for ${copybranch}, skip PR creation"
                     continue
                 fi                  
