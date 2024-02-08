@@ -63,7 +63,7 @@ jobs:
                 }
               }
             }
-          searchexpr: "type:pr state:open repo:${{ env.CUSTOM_REPO }} base:${{ env.TARGET_TRUNK }} label:custom label:approved label:test"
+          searchexpr: "type:pr state:open repo:${{ env.CUSTOM_REPO }} base:${{ env.TARGET_TRUNK }} label:custom label:approved"
           # searchexpr: "type:pr state:open repo:${{ env.CUSTOM_REPO }} base:${{ env.TARGET_TRUNK }} base:${{ env.TARGET_STABLE }} label:custom label:build-ready"
           # note that the search has OR semantice for `base:`, but AND semantics for `label:` !
           # see: https://docs.github.com/en/search-github/searching-on-github/searching-issues-and-pull-requests#search-by-label      
@@ -190,7 +190,7 @@ jobs:
                 stableprtitle="[${stablebranch}] ${title}"
                 stableprdescription="__${stablebranch} baseline for [#${prnr}](${url})__\r\n${body}"
                 gh pr create --title "${stableprtitle}" --body "${stableprdescription}" \
-                    --base "${stablebranch}" --head "${copybranch}" --label test --label custom 
+                    --base "${stablebranch}" --head "${copybranch}" --label custom 
                 echo ":white_check_mark: New PR #{prnr} ${stableprtitle} (not labelled for build, please check)"
             done < <(echo ${pulls} | jq -c -r '.[] | @json')
             set -e
