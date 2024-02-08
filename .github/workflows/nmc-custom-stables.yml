@@ -3,22 +3,12 @@
 #
 # Author: Bernd rederlechner <bernd.rederlechner@t-systems.com
 #
-# Take the current state of the customisation pullrequests and
-# create a copy of stable branches and PR. The stable branches
-# are used as bugfixing baesline, but not as "second development
-# stream"
-#
-# The procedure succeeds for a PR under the following conditions:
-# - The source PR is marked with labels: custom, build-ready
-# - The customisation branch is equal or newer than the stableXX Nextcloud
-#   upstream commit
-# - the branch is automatically merging to stableXX on creation
-#   (this means the start state of the copied stable branch 
-#    must be also a WORKING commit within the trunk customisation branch)     
+# Find all open customisation PRs with corresponding branches 
+# and create a stable backport branch and stable backport PR
+# if automatic rebasing of the master works. 
 # 
-#  You can run the script multiple times until all stable branches are available
+# 
 #
-# Test call: act --container-architecture linux/amd64 --secret-file ../secrets.env --env-file ../nmc-master-build.env -j build-custom-stable
 
 name: MCLOUD stable baseline
 
@@ -102,6 +92,8 @@ jobs:
       - name: Create missing stables
         id: copy_branches
         run: |
+            failed=0
+            set +e  
             pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             while IFS= read -r pr; do
                 prnr=$(echo $pr | jq -r '.number')
@@ -129,17 +121,22 @@ jobs:
                     echo ::error::"REBASE conflicts: ${copybranch} from ${prbranch}!"
                     git diff --diff-filter=U
                     echo ":no_entry_sign: ${copybranch} from ${prbranch} does not merge (skipped)!" >> $GITHUB_STEP_SUMMARY
+                    ((failed++))
                     git rebase --abort
                     git checkout $stablebranch
                     git branch -D $copybranch
                 fi
             done < <(echo ${pulls} | jq -c -r '.[] | @json')
+            set -e
+            if ((failed>0)); then
+                exit 1  
+            fi
     
-
         ###
         # after copying the branches to stable, create PRs for the successful ones 
       - name: "Find existing stable PR"
         uses: octokit/graphql-action@v2.x
+        if: ${{ success() || failure() }}
         id: find_backport_pr
         env:
           GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
@@ -160,9 +157,12 @@ jobs:
           searchexpr: "type:pr state:open repo:${{ env.CUSTOM_REPO }} base:${{ env.TARGET_STABLE }} label:test label:custom label:approved"    
           # searchexpr: "type:pr state:open repo:${{ env.CUSTOM_REPO }} base:${{ env.TARGET_STABLE }} label:test label:custom label:approved"    
 
-      - name: Create missing stables
+      - name: Create missing stable/backport PRs
         id: stable_prs
+        if: ${{ success() || failure() && steps.find_backport_pr.outcome == 'success' }}
         run: |
+            failed=0
+            set +e  
             pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             stablepulls=$(echo '${{ steps.find_backport_pr.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             while IFS= read -r pr; do
@@ -183,14 +183,19 @@ jobs:
                 # skip if no backport branch is available
                 if [ ! $(git ls-remote --heads origin ${copybranch} | grep -q ${copybranch}) ]; then
                     echo "::info:: No ${copybranch}, skip PR creation"
+                    ((failed++))
                     continue
                 fi                  
 
                 stableprtitle="[${stablebranch}] ${title}"
                 stableprdescription="__${stablebranch} baseline for [#${prnr}](${url})__\r\n${body}"
                 gh pr create --title "${stableprtitle}" --body "${stableprdescription}" \
-                    --base "${stablebranch}" --head "${copybranch}" --label test
-                # --label custom 
+                    --base "${stablebranch}" --head "${copybranch}" --label test --label custom 
+                echo ":white_check_mark: New PR #{prnr} ${stableprtitle} (not labelled for build, please check)"
             done < <(echo ${pulls} | jq -c -r '.[] | @json')
+            set -e
+            if ((failed>0)); then
+                exit 1  
+            fi
 
   
