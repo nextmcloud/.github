@@ -57,7 +57,6 @@ jobs:
                       mergeable
                       isDraft
                       url
-                      body
                     }
                   }
                 }
@@ -92,8 +91,9 @@ jobs:
       - name: Create missing stables
         id: copy_branches
         run: |
-            failed=0
+            # branch copies
             set +e  
+            failed=0
             pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             while IFS= read -r pr; do
                 prnr=$(echo $pr | jq -r '.number')
@@ -161,8 +161,9 @@ jobs:
         id: stable_prs
         if: ${{ success() || failure() && steps.find_backport_pr.outcome == 'success' }}
         run: |
-            failed=0
+            # stable backport PR creation
             set +e  
+            failed=0
             pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             stablepulls=$(echo '${{ steps.find_backport_pr.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
             while IFS= read -r pr; do
@@ -188,7 +189,7 @@ jobs:
                 fi                  
 
                 stableprtitle="[${stablebranch}] ${title}"
-                stableprdescription="__${stablebranch} baseline for [#${prnr}](${url})__\r\n${body}"
+                stableprdescription="\r\n__${stablebranch} baseline for\r\n[#${prnr} ${stableprtitle}](${url})__"
                 gh pr create --title "${stableprtitle}" --body "${stableprdescription}" \
                     --base "${stablebranch}" --head "${copybranch}" --label custom 
                 echo ":white_check_mark: New PR #{prnr} ${stableprtitle} (not labelled for build, please check)"
