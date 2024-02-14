@@ -113,6 +113,7 @@ jobs:
                 git branch --copy $prbranch $copybranch
 
                 git checkout $stablebranch
+                git checkout $trunkbranch
                 git rebase --merge --onto $stablebranch --fork-point $trunkbranch $copybranch
                 result=$?
                 if [ $result = 0 ]; then
