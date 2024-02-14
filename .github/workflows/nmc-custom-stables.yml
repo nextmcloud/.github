@@ -95,12 +95,12 @@ jobs:
             set +e  
             failed=0
             pulls=$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node)')
+            stablebranch="${{ env.TARGET_STABLE }}"
+            trunkbranch="${{ env.TARGET_STABLE }}"
             while IFS= read -r pr; do
                 prnr=$(echo $pr | jq -r '.number')
                 prbranch=$(echo $pr | jq -r '.headRefName')
-                stablebranch="${{ env.TARGET_STABLE }}"
-                copybranch="backport/nmc/${prnr}/${stablebranch}"
-                
+                trunkbranch=$(echo $pr | jq -r '.baseRefName')                
                 # Check if the new branch already exists
                 if git ls-remote --heads origin ${copybranch} | grep -q ${copybranch}; then
                   echo "::info:: Use existing ${copybranch}"
@@ -112,7 +112,7 @@ jobs:
                 git branch --copy $prbranch $copybranch
 
                 git checkout $stablebranch
-                git rebase --merge --onto $stablebranch --fork-point $stable $copybranch
+                git rebase --merge --onto $stablebranch --fork-point $trunkbranch $copybranch
                 result=$?
                 if [ $result = 0 ]; then
                     git push origin $copybranch
