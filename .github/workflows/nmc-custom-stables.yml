@@ -109,7 +109,7 @@ jobs:
 
                 # copy and rebase
                 git checkout $prbranch
-                git branch --copy $branch $copybranch
+                git branch --copy $prbranch $copybranch
 
                 git checkout $stablebranch
                 git rebase --merge --onto $stablebranch --fork-point $stable $copybranch
