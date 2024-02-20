@@ -138,6 +138,6 @@ jobs:
         CI_PROJECT_ID: 21527
         GITLAB_API: https://gitlab.devops.telekom.de/api/v4
         FILE_PATH: .gitlab-ci.yml
-        PRIVATE_TOKEN: "**TOKEN PLACEHOLDER**"
+        PRIVATE_TOKEN: "${{ secrets.GITLAB_PIPELINE_TOKEN }}"
 
         
