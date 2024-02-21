@@ -109,7 +109,7 @@ jobs:
 
         # TEST *** Extract the value of PKR_VAR_NC_TAG from VERSIONS
         PKR_VAR_NC_TAG=$(echo "$VERSIONS" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
-        echo $PKR_VAR_NC_TAG
+        echo "PKR_VAR_NC_TAG: $PKR_VAR_NC_TAG"
 
         # Read the source .gitlab-ci.yml content
         #EXISTING_CONTENT=$(curl -H "PRIVATE-TOKEN: $PRIVATE_TOKEN" "$GITLAB_API/projects/$CI_PROJECT_ID/repository/files/$FILE_PATH/raw?ref=master")
