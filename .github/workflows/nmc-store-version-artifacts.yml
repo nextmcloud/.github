@@ -111,7 +111,7 @@ jobs:
         
       - name: Combine version artifacts
         run: |
-          echo "${{ steps.retrieve-server.outputs.VERSION }}" > ${{ github.workspace }}/version-store/versions-combined.txt
+          echo "PKR_VAR_NC_TAG=${{ steps.retrieve-server.outputs.VERSION }}" > ${{ github.workspace }}/version-store/versions-combined.txt
           echo "PKR_VAR_APP_NMCPROVISIONING_TAG=${{ steps.retrieve-nmcprovisioning.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
           echo "PKR_VAR_APP_USER_OIDC_TAG=${{ steps.retrieve-user_oidc.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt
           echo "PKR_VAR_APP_NMCTHEME_TAG=${{ steps.retrieve-nmctheme.outputs.VERSION }}" >> ${{ github.workspace }}/version-store/versions-combined.txt

@@ -108,7 +108,9 @@ jobs:
     - name: Trigger Nmc deployment image building with versions
       run: |
         # Read artifact into variable
-        VERSIONS=$(cat "/home/runner/work/.github/.github/versions-combined.txt")
+        VERSIONS=$(cat "${{ github.workspace }}/versions-combined.txt")
+
+        echo "$VERSIONS"
 
         # TEST *** Extract the value of PKR_VAR_NC_TAG from VERSIONS
         PKR_VAR_NC_TAG=$(echo "$VERSIONS" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
