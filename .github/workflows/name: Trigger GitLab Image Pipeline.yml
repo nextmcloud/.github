@@ -113,7 +113,9 @@ jobs:
         echo "$VERSIONS"
 
         # TEST *** Extract the value of PKR_VAR_NC_TAG from VERSIONS
-        PKR_VAR_NC_TAG=$(echo "$VERSIONS" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
+        #PKR_VAR_NC_TAG=$(echo "$VERSIONS" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[[:space:]]*"\(.*\)"/\1/' | tr -d '[:space:]')
+        PKR_VAR_NC_TAG=$(echo "$VERSIONS" | grep "PKR_VAR_NC_TAG" | cut -d':' -f2 | sed 's/^[^=]*=//' | tr -d '[:space:]')
+        echo "::set-output name=PKR_VAR_NC_TAG::$PKR_VAR_NC_TAG"
         echo "PKR_VAR_NC_TAG: $PKR_VAR_NC_TAG"
 
         # Read the source .gitlab-ci.yml content
