@@ -137,6 +137,8 @@ jobs:
 
     - name: Update CI File
       run: |
+        git config --global user.email "tothr@t-systems.com"
+        git config --global user.name "rhtot"
         git clone --depth 1 --branch master https://rhtot:$PRIVATE_TOKEN@gitlab.devops.telekom.de/nextmagentacloud/themes.git
         cd "${{ github.workspace }}/themes"
         sed -i "s|PKR_VAR_NC_TAG:.*|PKR_VAR_NC_TAG: \"$PKR_VAR_NC_TAG\"|g" .gitlab-ci.yml
