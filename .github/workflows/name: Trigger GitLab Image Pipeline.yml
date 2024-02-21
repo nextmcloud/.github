@@ -90,6 +90,9 @@ jobs:
         # Extract artifact
         unzip "${{ github.workspace }}/versions-combined.zip"
 
+        # CAT content
+        cat "${{ github.workspace }}/versions-combined.txt"
+
         # Re-list workspace contents
         echo "List directory"
         ls -a "${{ github.workspace }}"
