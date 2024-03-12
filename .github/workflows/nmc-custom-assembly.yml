@@ -49,17 +49,17 @@ jobs:
       BUILD_USER:    ${{ github.actor }}
       BUILD_EMAIL:   ${{ github.actor }}@users.noreply.github.com
       BUILD_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
-      CUSTOM_BRANCH: ${{ inputs.result }} 
+      CUSTOM_BRANCH_28: ${{ inputs.result }} 
     steps:
       - name: Assembly preparation
         run: |
           if [ "$TARGET_TRUNK" = "$TARGET_STABLE" ]; then
-              echo ::notice::"TRUNK build '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH }}'"
-              echo "** TRUNK build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH }}' **" >> $GITHUB_STEP_SUMMARY
+              echo ::notice::"TRUNK build '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_28 }}'"
+              echo "** TRUNK build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_28 }}' **" >> $GITHUB_STEP_SUMMARY
               echo ::output name=buildtype::trunk
           else
-              echo ::notice::"BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH }}'"
-              echo "** BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH }}' **" >> $GITHUB_STEP_SUMMARY
+              echo ::notice::"BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_28 }}'"
+              echo "** BACKPORT build for '${{ env.TARGET_STABLE }}' -> '${{ env.CUSTOM_BRANCH_28 }}' **" >> $GITHUB_STEP_SUMMARY
               echo ::output name=buildtype::stable
           fi
 
@@ -191,17 +191,17 @@ jobs:
         id: createcustombranch
         if: ${{ success() || failure() && steps.checkout.outcome == 'success' }}
         run: |
-          if git ls-remote --exit-code --heads origin "$CUSTOM_BRANCH" >/dev/null 2>&1; then
+          if git ls-remote --exit-code --heads origin "$CUSTOM_BRANCH_28" >/dev/null 2>&1; then
               # make sure that customisation output branch is fresh
-              echo "Branch $CUSTOM_BRANCH exists upstream. Deleting..."
-              git push origin --delete "$CUSTOM_BRANCH"
+              echo "Branch $CUSTOM_BRANCH_28 exists upstream. Deleting..."
+              git push origin --delete "$CUSTOM_BRANCH_28"
           fi
-          git checkout -b $CUSTOM_BRANCH $TARGET_STABLE
+          git checkout -b $CUSTOM_BRANCH_28 $TARGET_STABLE
 
       #- name: Detect obsolete backport candidates
       #  id: checkobsolete
       #  run: |
-      #    git checkout $CUSTOM_BRANCH
+      #    git checkout $CUSTOM_BRANCH_28
       #    result=0
       #    newerparts=$(echo '${{ steps.pickbackports.outputs.newerparts }}' | jq -r '.[]')
       #    for newerpart in "$newerparts"
@@ -302,7 +302,7 @@ jobs:
               base=$(echo "$mergepull" | jq -r '.baseRefName')        
               title=$(echo "$mergepull" | jq -r '.title')
               prnr=$(echo "$mergepull" | jq -r '.number')
-              echo ::group::"$head(type:$base) >>> '${{ env.CUSTOM_BRANCH }}'"
+              echo ::group::"$head(type:$base) >>> '${{ env.CUSTOM_BRANCH_28 }}'"
               # same behavior used for buildtypes tags and stable
               # stable implements backport picking
               if [ "$base" = "$TARGET_STABLE" ]; then
@@ -327,8 +327,8 @@ jobs:
           fi
 
 ### PUSH result (optional)
-      - name: Push '${{ env.CUSTOM_BRANCH }}'
+      - name: Push '${{ env.CUSTOM_BRANCH_28 }}'
         id: pushcustomisation
         if: ${{ success() || failure() && steps.createcustombranch.outcome == 'success' }}
         run: |
-          git push origin $CUSTOM_BRANCH
+          git push origin $CUSTOM_BRANCH_28
