@@ -104,7 +104,7 @@ jobs:
                 
                 # Check if the new branch already exists
                 if git ls-remote --heads origin ${copybranch} | grep -q ${copybranch}; then
-                  echo "::info:: Use existing ${copybranch}"
+                  echo "::info:: Keep existing ${copybranch} untouched"
                   continue
                 fi
 
@@ -178,13 +178,13 @@ jobs:
                 copybranch="backport/nmc/${prnr}/${stablebranch}"
                 
                 # skip if PR already exists
-                if [[ $(echo ${stablepulls}  | jq --arg st "${stablebranch}" --arg bp "${copybranch}" '.[] | select(.baseRefName == $st and .headRefName == $bp)') ]]; then
+                if [[ "$(echo ${stablepulls}  | jq --arg st "${stablebranch}" --arg bp "${copybranch}" '.[] | select(.baseRefName == $st and .headRefName == $bp)')" ]]; then
                     echo "::info:: Existing PR for ${copybranch}, skip PR creation"
                     continue
                 fi                  
 
                 # skip if no backport branch is available
-                if [ ! $(git ls-remote --heads origin ${copybranch} | grep -q ${copybranch}) ]; then
+                if ! git ls-remote --heads origin ${copybranch} | grep -q ${copybranch}; then
                     echo "::info:: No ${copybranch}, skip PR creation"
                     ((failed++))
                     continue
