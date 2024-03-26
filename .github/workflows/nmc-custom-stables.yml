@@ -162,6 +162,8 @@ jobs:
       - name: Create missing stable/backport PRs
         id: stable_prs
         if: ${{ success() || failure() && steps.find_backport_pr.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
             # stable backport PR creation
             set +e  
