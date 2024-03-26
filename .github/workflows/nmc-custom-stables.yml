@@ -193,7 +193,10 @@ jobs:
                 fi                  
 
                 stableprtitle="[${stablebranch}] ${title}"
-                stableprdescription="\r\n__${stablebranch} baseline for\r\n[#${prnr} ${stableprtitle}](${url})__"
+                stableprdescription="
+            __${stablebranch} baseline for__
+            __[#${prnr} ${stableprtitle}](${url})__
+            "
                 gh pr create --title "${stableprtitle}" --body "${stableprdescription}" \
                     --base "${stablebranch}" --head "${copybranch}" --label custom 
                 echo ":white_check_mark: New PR #{prnr} ${stableprtitle} (not labelled for build, please check)"
