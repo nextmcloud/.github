@@ -39,6 +39,8 @@ env:
     /src/**/*.js
     /apps/**/src/**/*.js
     /core/src/**/*.js
+    /dist/*.js
+    /dist/*.map
     /themes/example/
     /vendor-bin/
     /.devcontainer/
