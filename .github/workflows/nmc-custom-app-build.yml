@@ -133,7 +133,7 @@ jobs:
         with:
           fallbackNode: '^16'
           fallbackNpm: '^7'
-          
+
       - name: Set up node ${{ steps.package-engines-versions.outputs.nodeVersion }}
         if: ${{ hashFiles('package.json') != '' }}
         uses: actions/setup-node@v3
@@ -141,9 +141,10 @@ jobs:
           node-version: ${{ steps.package-engines-versions.outputs.nodeVersion }}
           cache: npm
 
-      - name: Set up npm ${{ steps.package-engines-versions.outputs.npmVersion }}
+      # no global npm-update anymore! NPM derives directly from setup-node.
+      - name: Verify npm version
         if: ${{ hashFiles('package.json') != '' }}
-        run: npm i -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
+        run: npm --version
 
       - name: Build composer dependencies, sass, webpacks
         if: ${{ hashFiles('package.json') != '' }}
