@@ -1,11 +1,12 @@
 name: MCLOUD rebase custom branches
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       branch_type:
         description: 'Select which branches to rebase'
         required: true
+        type: string
 
 permissions:
   contents: write
