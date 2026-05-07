@@ -1,10 +1,10 @@
 ###
 # SPDX-License-Identifier: AGPL-3.0
 #
-# Author: Bernd Rederlechner <bernd.rederlechner@t-systems.com
+# Author: Bernd Rederlechner <bernd.rederlechner@t-systems.com>
 #
 # Build non-forked, self-developed app with the same mechanism
-# as MagentaCLOUD custoized apps
+# as MagentaCLOUD customized apps
 
 name: MCLOUD build (app)
 
@@ -26,7 +26,8 @@ on:
       prerelease:
         description: mark the package as pre-release
         required: false
-        type: string        
+        type: boolean
+        default: false
 
 env:
   CUSTOM_SERVER_EXCLUDES: |
@@ -49,7 +50,7 @@ env:
     babel.*
     webpack.*
     krankerl.toml
-    
+
   CUSTOM_TEST_EXCLUDES: |
     **/tests/
     **/cypress/
@@ -60,16 +61,18 @@ jobs:
   build-app:
     runs-on: ubuntu-latest
     env:
-      BUILD_USER:    ${{ github.actor }}
-      BUILD_EMAIL:   ${{ github.actor }}@users.noreply.github.com
-      BUILD_TOKEN:   ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
-      PHP_VERSION:   ${{ vars.PHP_VERSION || '8.1' }}
-      JFROG_TOKEN:   ${{ secrets.JFROG_TOKEN }}
-      JFROG_EMAIL:   ${{ secrets.JFROG_EMAIL }}
+      BUILD_USER: ${{ github.actor }}
+      BUILD_EMAIL: ${{ github.actor }}@users.noreply.github.com
+      BUILD_TOKEN: ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
+      PHP_VERSION: ${{ vars.PHP_VERSION || '8.1' }}
+      JFROG_TOKEN: ${{ secrets.JFROG_TOKEN }}
+      JFROG_EMAIL: ${{ secrets.JFROG_EMAIL }}
+      npm_config_optional: true
+
     steps:
       - name: Fetch stable branch
-        id:   checkout_branch
-        uses: actions/checkout@v3
+        id: checkout_branch
+        uses: actions/checkout@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -79,29 +82,29 @@ jobs:
           token: ${{ env.BUILD_TOKEN }}
 
       - name: Prepare GIT modifications
-        id:   prepare_git        
+        id: prepare_git
         run: |
           # set user in case commits are needed
-          git config user.name $BUILD_USER
-          git config user.email $BUILD_EMAIL
+          git config user.name "$BUILD_USER"
+          git config user.email "$BUILD_EMAIL"
           git remote set-url origin http://no.such.host
-  
+
       ###
       # To keep src as close as possible to Nextcloud checked in
-      # artefacts (and reduce size of patch diffs), the default
-      # release pack is created early
+      # artefacts and reduce size of patch diffs, the default
+      # release pack is created early.
       - name: Create app release
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
         with:
           tag_name: ${{ inputs.tag }}
           release_name: ${{ inputs.tag }}
           body: |
             Update for *Magenta*Cloud *regular app ${{ inputs.appname }}*
           draft: false
-          prerelease: ${{ inputs.prerelease || false }}
+          prerelease: ${{ inputs.prerelease }}
 
       # install php dependencies
       - name: Set up php ${{ env.PHP_VERSION }}
@@ -109,17 +112,16 @@ jobs:
         with:
           php-version: ${{ env.PHP_VERSION }}
           coverage: none
-  
+
       - name: Check composer.json
         id: check_composer
         uses: andstor/file-existence-action@v1
         with:
           files: "./composer.json"
-  
+
       - name: Install composer dependencies
         if: steps.check_composer.outputs.files_exists == 'true'
-        run: |
-          composer install --no-dev
+        run: composer install --no-dev --no-interaction --prefer-dist
 
       # the node.js, npm install procedure is taken over from upstream Nextcloud
       # command-compile.yml
@@ -128,26 +130,27 @@ jobs:
         uses: skjnldsv/read-package-engines-version-actions@v2.2
         id: package-engines-versions
         with:
-          fallbackNode: '^16'
-          fallbackNpm: '^7'
-          
+          fallbackNode: '^20'
+          fallbackNpm: '^10'
+
       - name: Set up node ${{ steps.package-engines-versions.outputs.nodeVersion }}
         if: ${{ hashFiles('package.json') != '' }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ steps.package-engines-versions.outputs.nodeVersion }}
           cache: npm
 
       - name: Set up npm ${{ steps.package-engines-versions.outputs.npmVersion }}
         if: ${{ hashFiles('package.json') != '' }}
-        run: npm i -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
+        run: npm install -g npm@"${{ steps.package-engines-versions.outputs.npmVersion }}"
 
       - name: Build composer dependencies, sass, webpacks
         if: ${{ hashFiles('package.json') != '' }}
         run: |
-          npm install --no-audit --no-fund
+          rm -rf node_modules
+          npm ci --include=optional --no-audit --no-fund
           npm run build --if-present
-  
+
       # TODO: check whether we have to generate css from scss for server at all
       # TODO: check whether we have to generate icons (default.css) from scss for server at all
       # (could be only required for theme build)
@@ -159,24 +162,24 @@ jobs:
             ${{ env.CUSTOM_SERVER_EXCLUDES }}
             ${{ env.CUSTOM_TEST_EXCLUDES }}
         run: |
-          echo -e "$CUSTOM_EXCLUDES" > ${RUNNER_TEMP}/.distignore
+          echo -e "$CUSTOM_EXCLUDES" > "${RUNNER_TEMP}/.distignore"
           if [ -f "./.nextcloudignore" ]; then
-            cat ./.nextcloudignore >> ${RUNNER_TEMP}/.distignore
+            cat ./.nextcloudignore >> "${RUNNER_TEMP}/.distignore"
           fi
           set -x
-          git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f --ignore-unmatch
+          git ls-files -z --ignored --exclude-per-directory="${RUNNER_TEMP}/.distignore" --cached | xargs -0 git rm -f --ignore-unmatch
           set +x
 
-    # for apps, this last step will also remove the .git directory, so no git operations after this points anymore
-
+      # for apps, this last step will also remove the .git directory,
+      # so no git operations after this point anymore
       - name: Pack app version
         run: |
-          tar -C ${GITHUB_WORKSPACE}/.. -czf ${RUNNER_TEMP}/${{ inputs.appname }}.tar.gz ${{ inputs.appname }}
+          tar -C "${GITHUB_WORKSPACE}/.." -czf "${RUNNER_TEMP}/${{ inputs.appname }}.tar.gz" "${{ inputs.appname }}"
 
       - name: Upload app package
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}            
+          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ runner.temp }}/${{ inputs.appname }}.tar.gz
@@ -186,7 +189,7 @@ jobs:
       - name: Post-failure cleanup
         id: release_cleanup
         if: ${{ !success() && steps.create_release.outcome == 'success' }}
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ env.BUILD_TOKEN }}
           script: |
@@ -195,16 +198,16 @@ jobs:
             // Get the release by tag
             const { data: release } = await github.rest.repos.getReleaseByTag({
               owner: context.repo.owner,
-              repo:  context.repo.repo,
-              tag:   releaseTag
+              repo: context.repo.repo,
+              tag: releaseTag,
             });
 
             // Delete the release
             try {
               await github.rest.repos.deleteRelease({
                 owner: context.repo.owner,
-                repo:  context.repo.repo,
-                release_id: release.id
+                repo: context.repo.repo,
+                release_id: release.id,
               });
             } catch (error) {
               // ignore on cleanup
@@ -214,10 +217,9 @@ jobs:
             try {
               await github.rest.git.deleteRef({
                 owner: context.repo.owner,
-                repo:  context.repo.repo,
-                ref: `tags/${releaseTag}`
+                repo: context.repo.repo,
+                ref: `tags/${releaseTag}`,
               });
             } catch (error) {
               // ignore on cleanup
             }
-  
