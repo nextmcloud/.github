@@ -119,10 +119,29 @@ jobs:
         with:
           files: "./composer.json"
   
-      - name: Install composer dependencies
+      - name: Install and build composer dependencies
         if: steps.check_composer.outputs.files_exists == 'true'
         run: |
-          composer install --no-dev
+          composer install --no-dev --no-interaction
+      
+          if php -r 'exit(isset(json_decode(file_get_contents("composer.json"), true)["extra"]["mozart"]) ? 0 : 1);'; then
+            composer bin all install --ansi
+      
+            if [ -x vendor/bin/mozart ]; then
+              vendor/bin/mozart compose
+            else
+              echo "Mozart config found, but vendor/bin/mozart is missing"
+              exit 1
+            fi
+      
+            if composer run-script --list | grep -q '^fix-prefixed-aeskw-imports'; then
+              composer run fix-prefixed-aeskw-imports
+            fi
+      
+            composer dump-autoload
+          else
+            echo "No Mozart config found, skipping Mozart compose"
+          fi
 
       # the node.js, npm install procedure is taken over from upstream Nextcloud
       # command-compile.yml
