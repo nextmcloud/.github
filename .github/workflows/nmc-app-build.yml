@@ -88,6 +88,11 @@ jobs:
           git config user.name "$BUILD_USER"
           git config user.email "$BUILD_EMAIL"
           git remote set-url origin http://no.such.host
+      
+      - name: Resolve checked out commit
+        id: checked_out_commit
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       ###
       # To keep src as close as possible to Nextcloud checked in
@@ -101,6 +106,7 @@ jobs:
         with:
           tag_name: ${{ inputs.tag }}
           release_name: ${{ inputs.tag }}
+          commitish: ${{ steps.checked_out_commit.outputs.sha }}
           body: |
             Update for *Magenta*Cloud *regular app ${{ inputs.appname }}*
           draft: false
