@@ -37,44 +37,49 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TYPE="${{ inputs.branch_type }}"
-          MATCHED_BRANCHES=""
 
-          # Open PRs abfragen
-          prs=$(gh pr list --state open --json headRefName,labels)
-
-          # Pattern dynamisch erzeugen
           if [[ "$TYPE" == "master" ]]; then
-            PATTERN="nmc/master*"
+            REGEX="^nmc/master"
             TARGET="origin/master"
           else
-            PATTERN="*${TYPE//./\\.}*"  # z.B. stable-5.0 → *stable-5.0*
+            REGEX="${TYPE//./\\.}"
             TARGET="origin/$TYPE"
           fi
 
-          for row in $(echo "$prs" | jq -r '.[] | @base64'); do
-            _jq() {
-              echo "${row}" | base64 --decode | jq -r "${1}"
-            }
+          echo "Searching open PRs for branch regex: $REGEX"
+          echo "Target: $TARGET"
 
-            BRANCH=$(_jq '.headRefName')
-            LABELS=$(_jq '.labels[].name' 2>/dev/null || echo "")
+          MATCHED_BRANCHES=$(gh pr list \
+            --state open \
+            --limit 200 \
+            --json headRefName,labels \
+            | jq -r --arg regex "$REGEX" '
+                .[]
+                | select(.headRefName | test($regex))
+                | select(any(.labels[].name; . == "approved"))
+                | .headRefName
+              ')
 
-            if [[ "$BRANCH" == $PATTERN && "$LABELS" == *approved* ]]; then
-              MATCHED_BRANCHES="$MATCHED_BRANCHES $BRANCH"
-            fi
-          done
+          echo "Matched branches:"
+          echo "$MATCHED_BRANCHES"
 
           if [[ -z "$MATCHED_BRANCHES" ]]; then
             echo "No approved PR branches found for $TYPE, exiting"
             exit 0
           fi
 
-          echo "branches=$MATCHED_BRANCHES" >> $GITHUB_OUTPUT
-          echo "target=$TARGET" >> $GITHUB_OUTPUT
+          {
+            echo "branches<<EOF"
+            echo "$MATCHED_BRANCHES"
+            echo "EOF"
+            echo "target=$TARGET"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Rebase approved PR branches
         run: |
-          for BRANCH in ${{ steps.filter.outputs.branches }}; do
+          while IFS= read -r BRANCH; do
+            [[ -z "$BRANCH" ]] && continue
+
             echo "Rebasing $BRANCH onto ${{ steps.filter.outputs.target }}"
 
             git checkout -B "$BRANCH" "origin/$BRANCH"
@@ -85,4 +90,4 @@ jobs:
               echo "Conflict in $BRANCH, aborting rebase"
               git rebase --abort
             fi
-          done
+          done <<< "${{ steps.filter.outputs.branches }}"
