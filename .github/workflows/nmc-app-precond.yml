@@ -52,7 +52,13 @@ jobs:
       - name: Load appinfo
         id: appinfo
         run: |
-          curl --silent "https://$BUILD_TOKEN@raw.githubusercontent.com/$GITHUB_REPOSITORY/"${{ inputs.versionbranch }}"/appinfo/info.xml" > ${{ runner.TEMP }}/info.xml
+          curl --fail --silent --show-error --location \
+            --header "Authorization: Bearer ${BUILD_TOKEN}" \
+            --header "Accept: application/vnd.github.raw+json" \
+            --get \
+            --data-urlencode "ref=${{ inputs.versionbranch }}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/contents/appinfo/info.xml" \
+            --output "${{ runner.TEMP }}/info.xml"
 
       - name: Get appname from appinfo
         id: appname
@@ -75,22 +81,29 @@ jobs:
           filename: ${{ runner.TEMP }}/info.xml
           expression: "/info/summary/text()"
 
-      - name: Check ambigouity
+      - name: Check ambiguity
         id: release_not_exist
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           github-token: ${{ env.BUILD_TOKEN }}
           script: |
-            // Test whether release is readable
+            const releaseTag = "nmc${{ steps.appversion.outputs.result }}-${{ inputs.increment }}";
+      
             try {
-              const releaseTag = "nmc${{ steps.appversion.outputs.result }}-${{ inputs.increment }}";
-              const { data: release } = await github.rest.repos.getReleaseByTag({
+              await github.rest.repos.getReleaseByTag({
                 owner: context.repo.owner,
-                repo:  context.repo.repo,
-                tag:   releaseTag
+                repo: context.repo.repo,
+                tag: releaseTag
               });
+      
               core.setFailed(`Release tags/${releaseTag} already exists!`);
             } catch (error) {
-              // expect release to be not found
-              // let's proceed build
+              if (error.status === 404) {
+                // Release does not exist -> expected
+                return;
+              }
+      
+              // Authentication errors, API failures etc. must fail the build
+              throw error;
             }
+
