@@ -189,6 +189,7 @@ jobs:
             --exclude='/.gitignore' \
             --exclude='/.gitattributes' \
             --exclude='/.nextcloudignore' \
+            --exclude='/node_modules/' \
             ./ "${PACKAGE_DIR}/"
 
       - name: Verify clean app package
