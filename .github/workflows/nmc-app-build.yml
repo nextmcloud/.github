@@ -260,6 +260,21 @@ jobs:
 
           echo "Release archive verification successful."
 
+      - name: Verify release tag does not exist
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.BUILD_TOKEN || secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+      
+          if gh api \
+            "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" \
+            >/dev/null 2>&1; then
+            echo "::error::Git tag ${RELEASE_TAG} already exists"
+            exit 1
+          fi
+
       - name: Create draft GitHub release
         id: create_release
         shell: bash
@@ -318,14 +333,18 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
         run: |
           set +e
-      
+
           IS_DRAFT="$(gh release view "${RELEASE_TAG}" \
             --json isDraft \
             --jq '.isDraft' 2>/dev/null)"
-      
+
           if [ "${IS_DRAFT}" = "true" ]; then
-            echo "Removing draft release created by this workflow run: ${RELEASE_TAG}"
-            gh release delete "${RELEASE_TAG}" --yes
+            echo "Removing draft release and tag created by this workflow run: ${RELEASE_TAG}"
+
+            gh release delete \
+              "${RELEASE_TAG}" \
+              --cleanup-tag \
+              --yes
           else
-            echo "Release is not a draft; skipping cleanup."
+            echo "Release is not a draft or could not be found; skipping cleanup."
           fi
