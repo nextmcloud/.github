@@ -71,14 +71,14 @@ jobs:
       PHP_VERSION:   ${{ vars.PHP_VERSION || '8.1' }}
     steps:
       - name: Fetch custom assembly
-        id:   checkout_custom
+        id: checkout_custom
         uses: actions/checkout@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           repository: ${{ github.repository }}
           ref: ${{ inputs.assembly }}
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ env.BUILD_TOKEN }}
 
       - name: Prepare GIT modifications
@@ -180,24 +180,53 @@ jobs:
             ${{ env.CUSTOM_TEST_EXCLUDES }}
         run: |
           echo -e "$CUSTOM_EXCLUDES" > ${RUNNER_TEMP}/.distignore
+
           if [ -f "./.nextcloudignore" ]; then
             cat ./.nextcloudignore >> ${RUNNER_TEMP}/.distignore
           fi
+
           set -x
-          git ls-files -z --ignored --exclude-per-directory=${RUNNER_TEMP}/.distignore --cached | xargs -0 git rm -f --ignore-unmatch
+          git ls-files -z --ignored \
+            --exclude-per-directory=${RUNNER_TEMP}/.distignore \
+            --cached \
+            | xargs -0 -r git rm -f --ignore-unmatch
           set +x
 
-      # for apps, this last step will also remove the .git directory, so no git operations after this points anymore
+          # These directories are not tracked by Git and therefore cannot
+          # be removed by git ls-files/git rm.
+          rm -rf .git
+          rm -rf node_modules
 
+          # Safety check: neither Git metadata nor node_modules may be
+          # included in the release package.
+          if [ -e ".git" ]; then
+            echo "ERROR: .git still exists in release directory"
+            exit 1
+          fi
+
+          if [ -e "node_modules" ]; then
+            echo "ERROR: node_modules still exists in release directory"
+            exit 1
+          fi
+
+          echo "Final app size:"
+          du -sh .
+
+      # No Git operations after this point because .git has been removed.
 
       - name: Pack app version
         run: |
-          tar -C ${GITHUB_WORKSPACE}/.. -czf ${RUNNER_TEMP}/${{ inputs.appname }}.tar.gz ${{ inputs.appname }}
+          tar -C ${GITHUB_WORKSPACE}/.. \
+            -czf ${RUNNER_TEMP}/${{ inputs.appname }}.tar.gz \
+            ${{ inputs.appname }}
+
+          echo "Release archive:"
+          ls -lh ${RUNNER_TEMP}/${{ inputs.appname }}.tar.gz
 
       - name: Upload custom app package
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}            
+          GITHUB_TOKEN: ${{ env.BUILD_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ runner.temp }}/${{ inputs.appname }}.tar.gz
