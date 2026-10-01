@@ -78,8 +78,15 @@ jobs:
         with:
           repository: ${{ github.repository }}
           ref: ${{ inputs.assembly }}
-          fetch-depth: 1
+          fetch-depth: 0
           token: ${{ env.BUILD_TOKEN }}
+
+      - name: Determine release commit
+        id: release_commit
+        run: |
+          RELEASE_SHA=$(git rev-parse HEAD)
+          echo "sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "Release will be created from commit: $RELEASE_SHA"
 
       - name: Prepare GIT modifications
         id:   prepare_git        
@@ -101,8 +108,9 @@ jobs:
         with:
           tag_name: ${{ inputs.tag }}
           release_name: ${{ inputs.tag }}
+          commitish: ${{ steps.release_commit.outputs.sha }}
           body: |
-              Update for *Magenta*Cloud *customized fork app ${{ inputs.appname }}*
+            Update for *Magenta*Cloud *customized fork app ${{ inputs.appname }}*
           draft: false
           prerelease: ${{ inputs.prerelease || false }}
 
