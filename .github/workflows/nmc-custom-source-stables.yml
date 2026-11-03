@@ -1,0 +1,440 @@
+###
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Author: Mauro Mura <mauro-efisio.mura@t-systems.com>
+#
+# Find all approved open customisation PRs on a selected source baseline
+# and create corresponding customisation branches and PRs for another
+# target baseline.
+#
+# Supported use cases include:
+#
+#   master      -> stable-33.0
+#   master      -> stable-34.0
+#   stable-33.0 -> stable-34.0
+#   stable-34.0 -> stable-35.0
+#   stable-35.0 -> master
+#
+# Stable targets use:
+#
+#   backport/nmc/<custom-id>/<stable-branch>
+#
+# Non-stable targets use:
+#
+#   custom/nmc/<custom-id>/<target-branch>
+#
+# When the source is already a generated backport/custom branch,
+# the original customisation ID is preserved.
+#
+###
+
+name: MCLOUD custom baseline port
+
+on:
+  workflow_call:
+    inputs:
+      source:
+        description: Base branch containing the source customisations
+        required: true
+        type: string
+
+      target:
+        description: Base branch to create the customisations for
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-custom-ports:
+    runs-on: ubuntu-latest
+
+    env:
+      CUSTOM_REPO: ${{ github.repository }}
+      SOURCE_BASE: ${{ inputs.source }}
+      TARGET_BASE: ${{ inputs.target }}
+
+      BUILD_USER: ${{ github.actor }}
+      BUILD_EMAIL: ${{ github.actor }}@users.noreply.github.com
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "$SOURCE_BASE" == "$TARGET_BASE" ]]; then
+            echo "::error::Source and target branch must be different."
+            exit 1
+          fi
+
+          echo "Source baseline: $SOURCE_BASE"
+          echo "Target baseline: $TARGET_BASE"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Prepare repository
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "$BUILD_USER"
+          git config user.email "$BUILD_EMAIL"
+
+          git config merge.verbosity 1
+          git config advice.skippedCherryPicks false
+
+          # Make all remote branches available locally.
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
+
+          if ! git show-ref --verify --quiet "refs/remotes/origin/$SOURCE_BASE"; then
+            echo "::error::Source branch '$SOURCE_BASE' does not exist."
+            exit 1
+          fi
+
+          if ! git show-ref --verify --quiet "refs/remotes/origin/$TARGET_BASE"; then
+            echo "::error::Target branch '$TARGET_BASE' does not exist."
+            exit 1
+          fi
+
+      - name: Find source customisations
+        id: source-customisations
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pulls="$(
+            gh pr list \
+              --repo "$CUSTOM_REPO" \
+              --state open \
+              --base "$SOURCE_BASE" \
+              --label custom \
+              --label approved \
+              --limit 100 \
+              --json number,title,baseRefName,headRefName,isDraft,url
+          )"
+
+          echo "$pulls" > "$RUNNER_TEMP/source-customisations.json"
+
+          count="$(
+            echo "$pulls" |
+              jq '[.[] | select(.isDraft == false)] | length'
+          )"
+
+          echo "Found $count approved customisation PR(s) on $SOURCE_BASE"
+
+          {
+            echo "## Customisation port"
+            echo
+            echo "**Source:** \`$SOURCE_BASE\`"
+            echo
+            echo "**Target:** \`$TARGET_BASE\`"
+            echo
+            echo "**Customisations:** $count"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create target branches
+        id: create-branches
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pulls="$(cat "$RUNNER_TEMP/source-customisations.json")"
+          failed=0
+
+          while IFS= read -r pr; do
+            prnr="$(echo "$pr" | jq -r '.number')"
+            prbranch="$(echo "$pr" | jq -r '.headRefName')"
+            sourcebase="$(echo "$pr" | jq -r '.baseRefName')"
+
+            #
+            # Determine the original customisation ID.
+            #
+            # For master customisations this normally is the source PR number.
+            #
+            # If the source itself is already a generated backport, preserve
+            # the original customisation ID instead of using the backport PR ID.
+            #
+            custom_id="$prnr"
+
+            if [[ "$prbranch" =~ ^backport/nmc/([^/]+)/ ]]; then
+              custom_id="${BASH_REMATCH[1]}"
+            elif [[ "$prbranch" =~ ^custom/nmc/([^/]+)/ ]]; then
+              custom_id="${BASH_REMATCH[1]}"
+            fi
+
+            #
+            # Stable targets keep the existing backport naming scheme.
+            #
+            if [[ "$TARGET_BASE" == stable-* ]]; then
+              copybranch="backport/nmc/${custom_id}/${TARGET_BASE}"
+            else
+              copybranch="custom/nmc/${custom_id}/${TARGET_BASE}"
+            fi
+
+            echo
+            echo "============================================================"
+            echo "Source PR:     #$prnr"
+            echo "Source base:   $sourcebase"
+            echo "Source branch: $prbranch"
+            echo "Target base:   $TARGET_BASE"
+            echo "Target branch: $copybranch"
+            echo "============================================================"
+
+            #
+            # Check that the source branch exists.
+            #
+            if ! git show-ref \
+              --verify \
+              --quiet \
+              "refs/remotes/origin/$prbranch"
+            then
+              echo "::error::Source branch '$prbranch' does not exist."
+              ((failed+=1))
+              continue
+            fi
+
+            #
+            # Keep existing target branches untouched.
+            #
+            if git ls-remote \
+              --exit-code \
+              --heads \
+              origin \
+              "$copybranch" >/dev/null 2>&1
+            then
+              echo "::info::Keep existing $copybranch untouched"
+
+              git fetch origin "$copybranch"
+
+              continue
+            fi
+
+            #
+            # Determine the actual fork point of the source customisation.
+            #
+            fork_point="$(
+              git merge-base \
+                "origin/$sourcebase" \
+                "origin/$prbranch"
+            )"
+
+            if [[ -z "$fork_point" ]]; then
+              echo "::error::Could not determine fork point for $prbranch"
+              ((failed+=1))
+              continue
+            fi
+
+            echo "Fork point: $fork_point"
+
+            #
+            # Create a local copy of the source customisation.
+            #
+            git checkout --detach "origin/$TARGET_BASE"
+
+            git branch -D "$copybranch" 2>/dev/null || true
+
+            git checkout \
+              -b "$copybranch" \
+              "origin/$prbranch"
+
+            #
+            # Replay only the customisation commits onto the selected target.
+            #
+            if git rebase \
+              --rebase-merges \
+              --onto "origin/$TARGET_BASE" \
+              "$fork_point" \
+              "$copybranch"
+            then
+              #
+              # If there is no difference left after the rebase, the change is
+              # already part of the target baseline.
+              #
+              if git diff \
+                --quiet \
+                "origin/$TARGET_BASE" \
+                "$copybranch"
+              then
+                echo "::info::Customisation #$custom_id is already contained in $TARGET_BASE"
+
+                echo ":fast_forward: Customisation #${custom_id} already contained in \`${TARGET_BASE}\`" \
+                  >> "$GITHUB_STEP_SUMMARY"
+
+                git checkout --detach "origin/$TARGET_BASE"
+                git branch -D "$copybranch"
+
+                continue
+              fi
+
+              git push origin "$copybranch"
+
+              echo ":white_check_mark: \`${prbranch}\` → \`${copybranch}\`" \
+                >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::REBASE conflict: $prbranch -> $copybranch"
+
+              git diff --diff-filter=U || true
+
+              git rebase --abort || true
+              git checkout --detach "origin/$TARGET_BASE"
+              git branch -D "$copybranch" || true
+
+              echo ":no_entry_sign: \`${prbranch}\` → \`${copybranch}\` has conflicts" \
+                >> "$GITHUB_STEP_SUMMARY"
+
+              ((failed+=1))
+            fi
+
+          done < <(
+            echo "$pulls" |
+              jq -c '.[] | select(.isDraft == false)'
+          )
+
+          if (( failed > 0 )); then
+            echo "::error::$failed customisation(s) could not be ported."
+            exit 1
+          fi
+
+      - name: Create missing target PRs
+        if: ${{ always() && steps.source-customisations.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pulls="$(cat "$RUNNER_TEMP/source-customisations.json")"
+          failed=0
+
+          while IFS= read -r pr; do
+            title="$(echo "$pr" | jq -r '.title')"
+            prnr="$(echo "$pr" | jq -r '.number')"
+            url="$(echo "$pr" | jq -r '.url')"
+            prbranch="$(echo "$pr" | jq -r '.headRefName')"
+
+            #
+            # Determine original customisation ID.
+            #
+            custom_id="$prnr"
+
+            if [[ "$prbranch" =~ ^backport/nmc/([^/]+)/ ]]; then
+              custom_id="${BASH_REMATCH[1]}"
+            elif [[ "$prbranch" =~ ^custom/nmc/([^/]+)/ ]]; then
+              custom_id="${BASH_REMATCH[1]}"
+            fi
+
+            #
+            # Determine target branch name.
+            #
+            if [[ "$TARGET_BASE" == stable-* ]]; then
+              copybranch="backport/nmc/${custom_id}/${TARGET_BASE}"
+            else
+              copybranch="custom/nmc/${custom_id}/${TARGET_BASE}"
+            fi
+
+            #
+            # Skip if the target branch was not created.
+            #
+            if ! git ls-remote \
+              --exit-code \
+              --heads \
+              origin \
+              "$copybranch" >/dev/null 2>&1
+            then
+              echo "::info::No $copybranch available, skip PR creation"
+              continue
+            fi
+
+            #
+            # Skip if the target branch contains no changes.
+            #
+            git fetch origin "$copybranch"
+
+            if git diff \
+              --quiet \
+              "origin/$TARGET_BASE" \
+              "origin/$copybranch"
+            then
+              echo "::info::$copybranch contains no changes compared to $TARGET_BASE"
+              continue
+            fi
+
+            #
+            # Skip if an open PR already exists.
+            #
+            existing_pr="$(
+              gh pr list \
+                --repo "$CUSTOM_REPO" \
+                --state open \
+                --base "$TARGET_BASE" \
+                --head "$copybranch" \
+                --json number \
+                --jq '.[0].number // empty'
+            )"
+
+            if [[ -n "$existing_pr" ]]; then
+              echo "::info::Existing PR #$existing_pr for $copybranch"
+              continue
+            fi
+
+            #
+            # Remove previous baseline prefixes such as:
+            #
+            #   [stable-33.0] My customisation
+            #
+            clean_title="$(
+              echo "$title" |
+                sed -E 's/^(\[[^]]+\][[:space:]]*)+//'
+            )"
+
+            #
+            # Stable PRs retain the established title format.
+            #
+            if [[ "$TARGET_BASE" == stable-* ]]; then
+              target_title="[${TARGET_BASE}] ${clean_title}"
+            else
+              target_title="${clean_title}"
+            fi
+
+            target_body="$(cat <<EOF
+          __${TARGET_BASE} baseline for__
+
+          __[#${prnr} ${clean_title}](${url})__
+
+          Source baseline: \`${SOURCE_BASE}\`
+
+          Source branch: \`${prbranch}\`
+          EOF
+          )"
+
+            if gh pr create \
+              --repo "$CUSTOM_REPO" \
+              --title "$target_title" \
+              --body "$target_body" \
+              --base "$TARGET_BASE" \
+              --head "$copybranch" \
+              --label custom
+            then
+              echo ":white_check_mark: PR created: \`${copybranch}\` → \`${TARGET_BASE}\`" \
+                >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "::error::Could not create PR for $copybranch"
+              ((failed+=1))
+            fi
+
+          done < <(
+            echo "$pulls" |
+              jq -c '.[] | select(.isDraft == false)'
+          )
+
+          if (( failed > 0 )); then
+            echo "::error::$failed PR(s) could not be created."
+            exit 1
+          fi
