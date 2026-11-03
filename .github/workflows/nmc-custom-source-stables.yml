@@ -7,11 +7,20 @@
 # and create corresponding customisation branches and PRs for another
 # target baseline.
 #
+# Instead of replaying the complete customisation history using rebase,
+# the final customisation diff is extracted from the source branch and
+# applied as a single patch onto a fresh target branch.
+#
+# This avoids replaying unrelated upstream changes between baselines and
+# significantly reduces conflicts when porting customisations across
+# multiple Nextcloud versions.
+#
 # Supported use cases include:
 #
 #   master      -> stable-33.0
 #   master      -> stable-34.0
 #   stable-33.0 -> stable-34.0
+#   stable-33.0 -> stable-35.0
 #   stable-34.0 -> stable-35.0
 #   stable-35.0 -> master
 #
@@ -150,18 +159,21 @@ jobs:
           pulls="$(cat "$RUNNER_TEMP/source-customisations.json")"
           failed=0
 
+          mkdir -p "$RUNNER_TEMP/custom-patches"
+
           while IFS= read -r pr; do
             prnr="$(echo "$pr" | jq -r '.number')"
+            title="$(echo "$pr" | jq -r '.title')"
             prbranch="$(echo "$pr" | jq -r '.headRefName')"
             sourcebase="$(echo "$pr" | jq -r '.baseRefName')"
 
             #
             # Determine the original customisation ID.
             #
-            # For master customisations this normally is the source PR number.
+            # For normal customisations this is the source PR number.
             #
-            # If the source itself is already a generated backport, preserve
-            # the original customisation ID instead of using the backport PR ID.
+            # If the source itself is already a generated backport/custom
+            # branch, preserve the original customisation ID.
             #
             custom_id="$prnr"
 
@@ -172,7 +184,7 @@ jobs:
             fi
 
             #
-            # Stable targets keep the existing backport naming scheme.
+            # Determine the target branch name.
             #
             if [[ "$TARGET_BASE" == stable-* ]]; then
               copybranch="backport/nmc/${custom_id}/${TARGET_BASE}"
@@ -183,6 +195,7 @@ jobs:
             echo
             echo "============================================================"
             echo "Source PR:     #$prnr"
+            echo "Custom ID:     $custom_id"
             echo "Source base:   $sourcebase"
             echo "Source branch: $prbranch"
             echo "Target base:   $TARGET_BASE"
@@ -190,7 +203,7 @@ jobs:
             echo "============================================================"
 
             #
-            # Check that the source branch exists.
+            # Verify that the source branch exists.
             #
             if ! git show-ref \
               --verify \
@@ -205,6 +218,10 @@ jobs:
             #
             # Keep existing target branches untouched.
             #
+            # This allows manually resolved target branches to survive
+            # subsequent workflow runs. A missing PR will still be created
+            # in the next step.
+            #
             if git ls-remote \
               --exit-code \
               --heads \
@@ -213,7 +230,11 @@ jobs:
             then
               echo "::info::Keep existing $copybranch untouched"
 
-              git fetch origin "$copybranch"
+              git fetch origin \
+                "+refs/heads/$copybranch:refs/remotes/origin/$copybranch"
+
+              echo ":information_source: Existing \`${copybranch}\` kept untouched" \
+                >> "$GITHUB_STEP_SUMMARY"
 
               continue
             fi
@@ -221,11 +242,19 @@ jobs:
             #
             # Determine the actual fork point of the source customisation.
             #
-            fork_point="$(
+            # The final customisation diff will be calculated from this
+            # point to the current source custom branch.
+            #
+            if ! fork_point="$(
               git merge-base \
                 "origin/$sourcebase" \
                 "origin/$prbranch"
             )"
+            then
+              echo "::error::Could not determine fork point for $prbranch"
+              ((failed+=1))
+              continue
+            fi
 
             if [[ -z "$fork_point" ]]; then
               echo "::error::Could not determine fork point for $prbranch"
@@ -236,7 +265,54 @@ jobs:
             echo "Fork point: $fork_point"
 
             #
-            # Create a local copy of the source customisation.
+            # Check whether the source customisation actually contains
+            # any changes compared to its source baseline.
+            #
+            if git diff \
+              --quiet \
+              "$fork_point" \
+              "origin/$prbranch"
+            then
+              echo "::info::Source customisation #$custom_id contains no changes"
+
+              echo ":fast_forward: Customisation #${custom_id} contains no source changes" \
+                >> "$GITHUB_STEP_SUMMARY"
+
+              continue
+            fi
+
+            #
+            # Extract only the final customisation diff.
+            #
+            # --binary:
+            #   Include binary files such as icons and images.
+            #
+            # --full-index:
+            #   Include complete blob hashes, allowing git apply --3way
+            #   to reconstruct the original blobs and perform a proper
+            #   three-way merge where possible.
+            #
+            patch_file="$RUNNER_TEMP/custom-patches/custom-${custom_id}.patch"
+
+            git diff \
+              --binary \
+              --full-index \
+              "$fork_point" \
+              "origin/$prbranch" \
+              > "$patch_file"
+
+            echo
+            echo "Customisation diff:"
+            git diff \
+              --stat \
+              "$fork_point" \
+              "origin/$prbranch"
+
+            #
+            # Always create the target branch directly from the selected
+            # target baseline.
+            #
+            # No source history is carried over.
             #
             git checkout --detach "origin/$TARGET_BASE"
 
@@ -244,29 +320,53 @@ jobs:
 
             git checkout \
               -b "$copybranch" \
-              "origin/$prbranch"
+              "origin/$TARGET_BASE"
 
             #
-            # Replay only the customisation commits onto the selected target.
+            # Check whether the exact customisation is already present
+            # in the target baseline.
             #
-            if git rebase \
-              --rebase-merges \
-              --onto "origin/$TARGET_BASE" \
-              "$fork_point" \
-              "$copybranch"
+            # If the patch can be cleanly reversed on the target, the
+            # customisation has already been applied there.
+            #
+            if git apply \
+              --reverse \
+              --check \
+              "$patch_file" >/dev/null 2>&1
+            then
+              echo "::info::Customisation #$custom_id is already contained in $TARGET_BASE"
+
+              echo ":fast_forward: Customisation #${custom_id} already contained in \`${TARGET_BASE}\`" \
+                >> "$GITHUB_STEP_SUMMARY"
+
+              git checkout --detach "origin/$TARGET_BASE"
+              git branch -D "$copybranch"
+
+              continue
+            fi
+
+            #
+            # Apply the complete final customisation as one patch.
+            #
+            # --3way lets Git fall back to a three-way merge if the exact
+            # patch context changed between source and target.
+            #
+            # --index makes successful changes directly available for the
+            # single squashed port commit.
+            #
+            if git apply \
+              --3way \
+              --index \
+              "$patch_file"
             then
               #
-              # If there is no difference left after the rebase, the change is
-              # already part of the target baseline.
+              # Nothing staged means the target already contains an
+              # equivalent result.
               #
-              if git diff \
-                --quiet \
-                "origin/$TARGET_BASE" \
-                "$copybranch"
-              then
-                echo "::info::Customisation #$custom_id is already contained in $TARGET_BASE"
+              if git diff --cached --quiet; then
+                echo "::info::Customisation #$custom_id produces no changes on $TARGET_BASE"
 
-                echo ":fast_forward: Customisation #${custom_id} already contained in \`${TARGET_BASE}\`" \
+                echo ":fast_forward: Customisation #${custom_id} produces no changes on \`${TARGET_BASE}\`" \
                   >> "$GITHUB_STEP_SUMMARY"
 
                 git checkout --detach "origin/$TARGET_BASE"
@@ -275,21 +375,78 @@ jobs:
                 continue
               fi
 
-              git push origin "$copybranch"
+              clean_title="$(
+                echo "$title" |
+                  sed -E 's/^(\[[^]]+\][[:space:]]*)+//'
+              )"
+
+              #
+              # Commit the port as a single squashed customisation commit.
+              #
+              if [[ "$TARGET_BASE" == stable-* ]]; then
+                commit_title="[${TARGET_BASE}] ${clean_title}"
+              else
+                commit_title="${clean_title}"
+              fi
+
+              git commit \
+                -m "$commit_title" \
+                -m "Ported from ${prbranch} (${sourcebase})."
+
+              git push \
+                -u \
+                origin \
+                "$copybranch"
 
               echo ":white_check_mark: \`${prbranch}\` → \`${copybranch}\`" \
                 >> "$GITHUB_STEP_SUMMARY"
+
             else
-              echo "::error::REBASE conflict: $prbranch -> $copybranch"
+              #
+              # The final customisation diff could not be applied cleanly.
+              #
+              # These conflicts represent actual differences between the
+              # customisation and the target baseline rather than conflicts
+              # caused by replaying the complete source history.
+              #
+              echo "::error::PATCH conflict: $prbranch -> $copybranch"
 
-              git diff --diff-filter=U || true
+              conflicted_files="$(
+                git diff \
+                  --name-only \
+                  --diff-filter=U || true
+              )"
 
-              git rebase --abort || true
+              if [[ -n "$conflicted_files" ]]; then
+                echo
+                echo "Conflicting files:"
+                echo "$conflicted_files"
+              fi
+
+              echo
+              echo "Conflict details:"
+              git diff --cc || true
+
+              {
+                echo ":no_entry_sign: \`${prbranch}\` → \`${copybranch}\` has patch conflicts"
+
+                if [[ -n "$conflicted_files" ]]; then
+                  echo
+                  echo "Conflicting files:"
+                  echo '```'
+                  echo "$conflicted_files"
+                  echo '```'
+                fi
+              } >> "$GITHUB_STEP_SUMMARY"
+
+              #
+              # Restore a clean repository for the next customisation.
+              #
+              git reset --hard "origin/$TARGET_BASE"
+              git clean -fd
+
               git checkout --detach "origin/$TARGET_BASE"
               git branch -D "$copybranch" || true
-
-              echo ":no_entry_sign: \`${prbranch}\` → \`${copybranch}\` has conflicts" \
-                >> "$GITHUB_STEP_SUMMARY"
 
               ((failed+=1))
             fi
@@ -312,6 +469,13 @@ jobs:
 
           pulls="$(cat "$RUNNER_TEMP/source-customisations.json")"
           failed=0
+
+          #
+          # Make sure remote tracking branches created by the previous
+          # step are available even if that step ended with conflicts for
+          # other customisations.
+          #
+          git fetch origin '+refs/heads/*:refs/remotes/origin/*'
 
           while IFS= read -r pr; do
             title="$(echo "$pr" | jq -r '.title')"
@@ -340,7 +504,10 @@ jobs:
             fi
 
             #
-            # Skip if the target branch was not created.
+            # Skip if no target branch is available.
+            #
+            # This includes customisations where automatic patch
+            # application failed and manual porting is required.
             #
             if ! git ls-remote \
               --exit-code \
@@ -352,11 +519,12 @@ jobs:
               continue
             fi
 
-            #
-            # Skip if the target branch contains no changes.
-            #
-            git fetch origin "$copybranch"
+            git fetch origin \
+              "+refs/heads/$copybranch:refs/remotes/origin/$copybranch"
 
+            #
+            # Skip branches without changes compared to the target.
+            #
             if git diff \
               --quiet \
               "origin/$TARGET_BASE" \
@@ -403,16 +571,14 @@ jobs:
               target_title="${clean_title}"
             fi
 
-            target_body="$(cat <<EOF
-          __${TARGET_BASE} baseline for__
-
-          __[#${prnr} ${clean_title}](${url})__
-
-          Source baseline: \`${SOURCE_BASE}\`
-
-          Source branch: \`${prbranch}\`
-          EOF
-          )"
+            printf -v target_body \
+              '__%s baseline for__\n\n__[#%s %s](%s)__\n\nSource baseline: `%s`\n\nSource branch: `%s`\n' \
+              "$TARGET_BASE" \
+              "$prnr" \
+              "$clean_title" \
+              "$url" \
+              "$SOURCE_BASE" \
+              "$prbranch"
 
             if gh pr create \
               --repo "$CUSTOM_REPO" \
