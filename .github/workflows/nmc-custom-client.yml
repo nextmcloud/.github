@@ -36,6 +36,11 @@ on:
         description: stable release branch name, defaults to `<trunk>` for builds on current upstream 
         required: false
         type: string
+      branding_overlay:
+        description: Branding overlay branch merged after all customisation PRs
+        required: false
+        type: string
+        default: nmc/branding-overlay
       
 
 jobs:
@@ -50,6 +55,7 @@ jobs:
       BUILD_EMAIL:   ${{ github.actor }}@users.noreply.github.com
       BUILD_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
       CUSTOM_BRANCH: ${{ inputs.result }} 
+      BRANDING_OVERLAY: ${{ inputs.branding_overlay }}
     steps:
       - name: Assembly preparation
         run: |
@@ -94,8 +100,13 @@ jobs:
       - name: Filter search result
         id: customisations
         run: |
-          pulls="$(echo '${{ steps.find_customisations.outputs.data }}' | jq -s '.[].search.edges | map(.node) | sort_by(.headRefName)')"
-          echo pulls=$pulls >> $GITHUB_OUTPUT       
+          pulls="$(echo '${{ steps.find_customisations.outputs.data }}' \
+            | jq -s --arg overlay "$BRANDING_OVERLAY" \
+              '.[].search.edges
+               | map(.node)
+               | map(select(.headRefName != $overlay))
+               | sort_by(.headRefName)')"
+          echo "pulls=$pulls" >> "$GITHUB_OUTPUT"
 
       # identify non-mergeable branches and exclude them from build
       - name: Check mergeability
@@ -213,10 +224,46 @@ jobs:
           if ((failed>0)); then
               exit 1  
           fi
+      - name: Merge branding overlay
+        id: brandingmerge
+        if: ${{ success() && steps.custommerge.outcome == 'success' }}
+        run: |
+          set -e
+
+          git config user.name "$BUILD_USER"
+          git config user.email "$BUILD_EMAIL"
+
+          echo "::group::Branding overlay '$BRANDING_OVERLAY' >>> '$CUSTOM_BRANCH'"
+
+          if ! git ls-remote --exit-code --heads origin "$BRANDING_OVERLAY" >/dev/null 2>&1; then
+              echo "::error::Branding overlay branch '$BRANDING_OVERLAY' does not exist."
+              echo ":no_entry_sign: Branding overlay branch \`$BRANDING_OVERLAY\` does not exist." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+          fi
+
+          git checkout "$CUSTOM_BRANCH"
+          git fetch origin "$BRANDING_OVERLAY"
+
+          if ! git merge --no-ff --commit \
+              -m "Merge branding overlay '$BRANDING_OVERLAY'" \
+              FETCH_HEAD; then
+
+              git diff --diff-filter=U
+
+              echo "::error::Failed to merge branding overlay '$BRANDING_OVERLAY'."
+              echo ":no_entry_sign: Failed to merge branding overlay \`$BRANDING_OVERLAY\`." >> "$GITHUB_STEP_SUMMARY"
+
+              git merge --abort || true
+              exit 1
+          fi
+
+          echo ":white_check_mark: Branding overlay \`$BRANDING_OVERLAY\` merged last." >> "$GITHUB_STEP_SUMMARY"
+
+          echo "::endgroup::"
 
 ### PUSH result (optional)
       - name: Push '${{ env.CUSTOM_BRANCH }}'
         id: pushcustomisation
-        if: ${{ success() || failure() && steps.createcustombranch.outcome == 'success' }}
+        if: ${{ success() }}
         run: |
-          git push origin $CUSTOM_BRANCH
+          git push origin "$CUSTOM_BRANCH"
