@@ -101,11 +101,12 @@ jobs:
         id: customisations
         run: |
           pulls="$(echo '${{ steps.find_customisations.outputs.data }}' \
-            | jq -s --arg overlay "$BRANDING_OVERLAY" \
-              '.[].search.edges
+            | jq -c --arg overlay "$BRANDING_OVERLAY" \
+              '.search.edges
                | map(.node)
                | map(select(.headRefName != $overlay))
                | sort_by(.headRefName)')"
+      
           echo "pulls=$pulls" >> "$GITHUB_OUTPUT"
 
       # identify non-mergeable branches and exclude them from build
